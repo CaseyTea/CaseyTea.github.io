@@ -308,7 +308,14 @@
 
         <header>
           <h2 class="h2 article-title">Resume</h2>
+          <section class="download-resume">
+            <a href="./assets/Casey_Franceschy.pdf" class="resume-btn" download>
+              <ion-icon name="download-outline"></ion-icon>
+              <span>Download Resume</span>
+            </a>
         </header>
+
+
 
         <section class="timeline">
 
@@ -327,14 +334,14 @@
               <h4 class="h4 timeline-item-title">Analyst 1: Programmer (Part-Time)</h4>
 
               <span>July 2024 - Present</span>
-             <p class="timeline-text">
-              Designed and implemented a centralized username generation system for 10,000+ employees and 
-              students with integrated database storage to streamline user creation. Developed a scalable 
-              .NET 8 Minimal API with modular endpoints for future enhancements. Modernized database migrations 
-              by replacing legacy SQL/bash scripts with a code-first Entity Framework approach. 
-              Automated deployments through Azure DevOps pipelines for building, publishing, and 
-              deploying APIs to IIS.
-             </p> 
+              <p class="timeline-text">
+                Designed and implemented a centralized username generation system for 10,000+ employees and
+                students with integrated database storage to streamline user creation. Developed a scalable
+                .NET 8 Minimal API with modular endpoints for future enhancements. Modernized database migrations
+                by replacing legacy SQL/bash scripts with a code-first Entity Framework approach.
+                Automated deployments through Azure DevOps pipelines for building, publishing, and
+                deploying APIs to IIS.
+              </p>
 
 
             </li>
@@ -346,11 +353,11 @@
               <span>May 2023 - Present</span>
 
               <p class="timeline-text">
-                Ranked in the top 5% of support staff via Zendesk metrics, delivering 100% customer 
-                satisfaction with 30% faster response/resolution times than team averages. Provided 
-                advanced technical support for district-wide IT infrastructure—troubleshooting 
-                hardware/software issues across 50+ schools and offices. Implemented and maintained 
-                critical education technology solutions to ensure seamless operations for classrooms 
+                Ranked in the top 5% of support staff via Zendesk metrics, delivering 100% customer
+                satisfaction with 30% faster response/resolution times than team averages. Provided
+                advanced technical support for district-wide IT infrastructure—troubleshooting
+                hardware/software issues across 50+ schools and offices. Implemented and maintained
+                critical education technology solutions to ensure seamless operations for classrooms
                 and administrative systems.
               </p>
 
@@ -363,10 +370,10 @@
               <span>January 2022 - July 2022</span>
 
               <p class="timeline-text">
-                Managed 9,000+ tickets during a 6-month internship, demonstrating strong organizational 
-                and multitasking skills. Enhanced team efficiency by overhauling internal documentation, 
-                streamlining triage for both staff and new interns. Optimized log-parsing scripts to cut 
-                bug triage time by 50%, accelerating critical issue resolution. Collaborated 
+                Managed 9,000+ tickets during a 6-month internship, demonstrating strong organizational
+                and multitasking skills. Enhanced team efficiency by overhauling internal documentation,
+                streamlining triage for both staff and new interns. Optimized log-parsing scripts to cut
+                bug triage time by 50%, accelerating critical issue resolution. Collaborated
                 cross-functionally to route tickets effectively, improving overall workflow efficiency.
               </p>
 
@@ -394,10 +401,17 @@
               <p class="timeline-text">
                 Bachelor of Science, Computer Science
               </p>
+
+            </li>
+
+            <li class="timeline-item">
               <h4 class="h4 timeline-item-title">Orange Coast College</h4>
 
               <p class="timeline-text">
-              Associate Transfer Degree, Computer Science
+                Associate Degree, Computer Science
+              </p>
+              <p class="timeline-text">
+                C++ Programming, Certificate of Specialization
               </p>
 
             </li>
@@ -405,7 +419,59 @@
           </ol>
 
         </section>
+        <section class="skills">
+          <div class="title-wrapper">
+            <h3 class="h3">Skills</h3>
+          </div>
+          <ul class="skills-list">
+            <li class="timeline-item">
+              <h4 class="h4 timeline-item-title">.NET Development</h4>
+              <p class="timeline-text">Building scalable APIs and applications with .NET 8 and Entity Framework.</p>
+            </li>
+            <li class="timeline-item">
+              <h4 class="h4 timeline-item-title">Python</h4>
+              <p class="timeline-text">Developing tools and bots, including a Discord bot for community engagement.</p>
+            </li>
+            <li class="timeline-item">
+              <h4 class="h4 timeline-item-title">AWS</h4>
+              <p class="timeline-text">Leveraging Lambda and analytics for cloud-based solutions.</p>
+            </li>
+            <li class="timeline-item">
+              <h4 class="h4 timeline-item-title">Azure</h4>
+              <p class="timeline-text">Deploying containerized apps and CI/CD pipelines with Azure DevOps.</p>
+            </li>
+            <li class="timeline-item">
+              <h4 class="h4 timeline-item-title">DevOps</h4>
+              <p class="timeline-text">Automating deployments and managing infrastructure with CI/CD tools.</p>
+            </li>
+            <li class="timeline-item">
+              <h4 class="h4 timeline-item-title">SQL</h4>
+              <p class="timeline-text">Designing and querying databases for efficient data management.</p>
+            </li>
+          </ul>
+        </section>
 
+        <style>
+          .skills-list {
+            font-size: var(--fs-6);
+            margin-left: 45px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+          }
+
+          @media (min-width: 768px) {
+            .skills-list {
+              grid-template-columns: 1fr 1fr;
+              gap: 30px 15px;
+            }
+          }
+
+          .skills .timeline-item::before {
+            display: none;
+          }
+        </style>
+        <!--
         <section class="skill">
 
           <h3 class="h3 skills-title">My skills</h3>
@@ -467,7 +533,7 @@
           </ul>
 
         </section>
-
+      -->
       </article>
 
 

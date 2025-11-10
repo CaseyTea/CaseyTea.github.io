@@ -157,3 +157,42 @@ for (let i = 0; i < navigationLinks.length; i++) {
 
   });
 }
+
+
+
+// game modal variables
+const gameModalTrigger = document.querySelector("[data-game-modal]");
+const gameModalContainer = document.querySelector("[data-game-modal-container]");
+const gameModalCloseBtn = document.querySelector("[data-game-modal-close-btn]");
+const gameOverlay = document.querySelector("[data-game-overlay]");
+const gameIframe = document.getElementById("game-iframe");
+
+// game modal toggle function
+const gameModalFunc = function () {
+  gameModalContainer.classList.toggle("active");
+
+  // Load or unload the iframe when modal opens/closes
+  if (gameModalContainer.classList.contains("active")) {
+    gameIframe.src = "https://guessthatasciimon-hgdfeafdhqdddef0.canadacentral-01.azurewebsites.net/";
+  } else {
+    // Clear iframe src when closing to stop the game
+    gameIframe.src = "";
+  }
+}
+
+// add click event to game modal trigger
+if (gameModalTrigger) {
+  gameModalTrigger.addEventListener("click", function (e) {
+    e.preventDefault();
+    gameModalFunc();
+  });
+}
+
+// add click event to game modal close button and overlay
+if (gameModalCloseBtn) {
+  gameModalCloseBtn.addEventListener("click", gameModalFunc);
+}
+
+if (gameOverlay) {
+  gameOverlay.addEventListener("click", gameModalFunc);
+}

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/caseyfranceschy/source/repos/Personal/GuessThatAsciiMon/wwwroot/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

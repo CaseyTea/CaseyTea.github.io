@@ -323,12 +323,15 @@
 
               <span>July 2024 - Present</span>
               <p class="timeline-text">
-                Designed and implemented a centralized username generation system for 10,000+ employees and
-                students with integrated database storage to streamline user creation. Developed a scalable
-                .NET 8 Minimal API with modular endpoints for future enhancements. Modernized database migrations
-                by replacing legacy SQL/bash scripts with a code-first Entity Framework approach.
-                Automated deployments through Azure DevOps pipelines for building, publishing, and
-                deploying APIs to IIS.
+                Designed and implemented a centralized username generation system serving 10,000+ employees and
+                students, reducing manual user creation time and eliminating username collisions. Developed a scalable
+                .NET 8 Minimal API with modular architecture and integrated database storage for future extensibility.
+                Modernized database migrations by replacing legacy SQL/bash scripts with a code-first Entity Framework
+                approach, improving maintainability and version control. Automated CI/CD workflows using Azure DevOps
+                pipelines for building, publishing, and deploying to IIS. Served as key contributor to MyPortal HR
+                application, integrating username management capabilities and implementing data validation features for
+                HR workflows. Led cross-functional meetings and collaborated with IT and HR teams to troubleshoot and
+                resolve critical user account issues.
               </p>
 
 
@@ -584,6 +587,42 @@
 
           <ul class="project-list">
 
+            <li class="project-item  active" data-filter-item data-category="Game Development">
+              <a href="#" data-game-modal>
+
+                <figure class="project-img">
+                  <div class="project-item-icon-box">
+                    <ion-icon name="game-controller-outline"></ion-icon>
+                  </div>
+
+                  <img src="./assets/images/ascii-ball.jpg" alt="GuessThatAsciiMon" loading="lazy">
+                </figure>
+
+                <h3 class="project-title">GuessThatAsciiMon</h3>
+
+                <p class="project-category">A retro terminal-style Pokemon guessing game built with Blazor Server. The game fetches random Pokemon from the PokeAPI,
+                converts their sprites to ASCII art in real-time, and challenges players to guess the Pokemon based on hints like weight and type.
+                While working on my Username API I wanted to advance my learning into API calls I had the idea to create a fun game with PokeAPI as practice. Click the image to play.</p>
+
+              </a>
+            </li>
+
+            <li class="project-item  active" data-filter-item data-category="professional">
+
+                <figure class="project-img">
+
+                  <img src="./assets/images/project-usernamegen.png" alt="Username Generator" loading="lazy">
+                </figure>
+
+                <h3 class="project-title">Username Generator API</h3>
+
+                <p class="project-category">While at Irvine Unified School district I was fortunate enough to work with the Information Systems team to Replaced a
+                  legacy SQL-based username generation process with a .NET Minimal API to ensure automatic, collision-free usernames for new employees and students. In recent updates I have continued to advance this API and is now integrated
+                  into a core HR application. I have also created additional enpoints for our IT team to help support HR with errors. Ontop of integration this into our HR application I have also integrated the internal tools for IT to use.
+                </p>
+
+            </li>
+
             <li class="project-item  active" data-filter-item data-category="Cloud">
               <a href="https://github.com/CaseyTea/Mockbot" target="_blank">
 
@@ -598,7 +637,7 @@
                 <h3 class="project-title">MockBot</h3>
 
                 <p class="project-category">Have you ever just thought about something funny and then followed through to make it?
-                This was mockbot, I turned a meme into reality. I wanted to mock someone but got tired of having to press shift inbetween 
+                This was mockbot, I turned a meme into reality. I wanted to mock someone but got tired of having to press shift inbetween
                 each letter and through why not just make a bot to do this for me. So Mockbot was born during one of my Coding Jams </p>
               </a>
             </li>
@@ -617,8 +656,8 @@
                 <h3 class="project-title">Microverse</h3>
 
                 <p class="project-category">My first stab at Unity and working with a game engine. Jenni was an amazing lead on this project
-                and helped guide a group of Unity noobies to create a full fledged mobile game. We took inspiration from WarioWare to create 
-                a string of mini games that were simple with addictive repayability. We learned to manage a backlog of features and bugs, 
+                and helped guide a group of Unity noobies to create a full fledged mobile game. We took inspiration from WarioWare to create
+                a string of mini games that were simple with addictive repayability. We learned to manage a backlog of features and bugs,
                 pitch and present a product to stakeholders as well as lead weekly SCRUM meetings. </p>
 
               </a>
@@ -638,24 +677,10 @@
                 <h3 class="project-title">EcoQuest</h3>
 
                 <p class="project-category">This project was a spin off of Pokemon Go at its peak. At the time my partner and I were learning how to implement Google
-                Map's API as well as using DBs. This Project was where I learned to be careful where I copy and paste SQL commands; many hours were spent debugging 
+                Map's API as well as using DBs. This Project was where I learned to be careful where I copy and paste SQL commands; many hours were spent debugging
                 SQL typos. </p>
 
               </a>
-            </li>
-            <li class="project-item  active" data-filter-item data-category="professional">
-
-                <figure class="project-img">
-
-                  <img src="./assets/images/project-usernamegen.png" alt="Username Generator" loading="lazy">
-                </figure>
-
-                <h3 class="project-title">Username Generator API</h3>
-
-                <p class="project-category">While at Irvine Unified School district I was fortunate enough to work with the Information Systems team to Replaced a 
-                  legacy SQL-based username generation process with a .NET Minimal API to ensure automatic, collision-free usernames for new employees and students.
-                </p>
-
             </li>
 
             <!--
@@ -698,6 +723,27 @@
           </ul>
 
         </section>
+
+        <!-- Game Modal -->
+        <div class="game-modal-container" data-game-modal-container>
+          <div class="overlay" data-game-overlay></div>
+
+          <section class="game-modal">
+            <button class="modal-close-btn" data-game-modal-close-btn>
+              <ion-icon name="close-outline"></ion-icon>
+            </button>
+
+            <div class="game-modal-content">
+              <h3 class="h3 modal-title">GuessThatAsciiMon</h3>
+              <iframe
+                id="game-iframe"
+                src=""
+                frameborder="0"
+                allowfullscreen>
+              </iframe>
+            </div>
+          </section>
+        </div>
 
       </article>
 

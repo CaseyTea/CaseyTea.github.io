@@ -166,6 +166,7 @@ const gameModalContainer = document.querySelector("[data-game-modal-container]")
 const gameModalCloseBtn = document.querySelector("[data-game-modal-close-btn]");
 const gameOverlay = document.querySelector("[data-game-overlay]");
 const gameIframe = document.getElementById("game-iframe");
+const gameLoading = document.getElementById("game-loading");
 
 // game modal toggle function
 const gameModalFunc = function () {
@@ -173,11 +174,32 @@ const gameModalFunc = function () {
 
   // Load or unload the iframe when modal opens/closes
   if (gameModalContainer.classList.contains("active")) {
+    // Show loading screen
+    if (gameLoading) {
+      gameLoading.classList.remove("hidden");
+    }
+    gameIframe.classList.remove("loaded");
+
+    // Load the game
     gameIframe.src = "https://guessthatasciimon-hgdfeafdhqdddef0.canadacentral-01.azurewebsites.net/";
   } else {
     // Clear iframe src when closing to stop the game
     gameIframe.src = "";
+    gameIframe.classList.remove("loaded");
   }
+}
+
+// Hide loading screen when iframe loads
+if (gameIframe) {
+  gameIframe.addEventListener("load", function() {
+    // Small delay to ensure content is rendered
+    setTimeout(() => {
+      if (gameLoading) {
+        gameLoading.classList.add("hidden");
+      }
+      gameIframe.classList.add("loaded");
+    }, 500);
+  });
 }
 
 // add click event to game modal trigger

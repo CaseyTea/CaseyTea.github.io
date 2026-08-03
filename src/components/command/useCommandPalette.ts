@@ -66,7 +66,8 @@ export function useCommandPalette(commands: Command[]) {
         const opensWithCommandKey =
           event.key.toLocaleLowerCase() === 'k' &&
           (event.ctrlKey || event.metaKey) &&
-          !event.altKey
+          !event.altKey &&
+          !event.shiftKey
 
         if (opensWithColon || opensWithCommandKey) {
           event.preventDefault()

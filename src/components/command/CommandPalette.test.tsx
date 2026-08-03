@@ -43,6 +43,26 @@ test('opens the command dialog with colon and Control+K', () => {
   expect(screen.getByRole('dialog', { name: 'Portfolio commands' })).toBeVisible()
 })
 
+test('opens with Command+K and leaves modified browser shortcuts alone', () => {
+  const { unmount } = render(<CommandPalette commands={createCommands()} />)
+
+  fireEvent.keyDown(window, { key: 'k', metaKey: true })
+  expect(screen.getByRole('dialog', { name: 'Portfolio commands' })).toBeVisible()
+
+  unmount()
+  render(<CommandPalette commands={createCommands()} />)
+
+  expect(fireEvent.keyDown(window, { key: 'k', ctrlKey: true, shiftKey: true })).toBe(true)
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+})
+
+test('prevents default only for recognized opening shortcuts', () => {
+  render(<CommandPalette commands={createCommands()} />)
+
+  expect(fireEvent.keyDown(window, { key: 'l', ctrlKey: true })).toBe(true)
+  expect(fireEvent.keyDown(window, { key: ':' })).toBe(false)
+})
+
 test('does not open from colon typed in an editable field', () => {
   render(
     <>
@@ -52,6 +72,31 @@ test('does not open from colon typed in an editable field', () => {
   )
 
   fireEvent.keyDown(screen.getByRole('textbox', { name: 'Example field' }), { key: ':' })
+
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+})
+
+test.each([
+  ['textarea', <textarea data-testid="editable-target" key="textarea" />],
+  [
+    'select',
+    <select data-testid="editable-target" key="select">
+      <option>Example</option>
+    </select>,
+  ],
+  [
+    'contenteditable',
+    <div contentEditable data-testid="editable-target" key="contenteditable" />,
+  ],
+])('does not open from colon typed in a %s', (_name, editableTarget) => {
+  render(
+    <>
+      {editableTarget}
+      <CommandPalette commands={createCommands()} />
+    </>,
+  )
+
+  fireEvent.keyDown(screen.getByTestId('editable-target'), { key: ':' })
 
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 })

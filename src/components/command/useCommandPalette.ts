@@ -48,7 +48,7 @@ export function useCommandPalette(commands: Command[]) {
   const runCommand = useCallback(
     (command: Command) => {
       command.run()
-      reset(false)
+      reset(command.restoreInvokingFocus !== false)
     },
     [reset],
   )

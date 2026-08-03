@@ -1,7 +1,12 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { readFileSync } from 'node:fs'
-import { vi } from 'vitest'
+import { afterEach, vi } from 'vitest'
 import { App } from './App'
+
+afterEach(() => {
+  vi.restoreAllMocks()
+  vi.unstubAllGlobals()
+})
 
 const sectionLinks = [
   ['Overview', '#overview'],
@@ -262,6 +267,57 @@ test('runs section commands by aligning the hash, active status, and destination
   expect(offscreenTrigger).not.toHaveFocus()
 })
 
+test('explicitly scrolls an already-current section into view before focusing it', () => {
+  window.history.replaceState(null, '', '/#projects')
+  render(<App />)
+
+  const projects = screen.getByRole('region', { name: /selected projects/i })
+  const scrollIntoView = vi.fn()
+  const focus = vi.spyOn(projects, 'focus')
+  Object.defineProperty(projects, 'scrollIntoView', {
+    configurable: true,
+    value: scrollIntoView,
+  })
+
+  fireEvent.keyDown(window, { key: ':' })
+  const input = screen.getByRole('combobox', { name: 'Find a command' })
+  fireEvent.change(input, { target: { value: 'projects' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+
+  expect(window.location.hash).toBe('#projects')
+  expect(scrollIntoView).toHaveBeenCalledOnce()
+  expect(focus).toHaveBeenCalledWith({ preventScroll: true })
+  expect(scrollIntoView.mock.invocationCallOrder[0]).toBeLessThan(
+    focus.mock.invocationCallOrder[0],
+  )
+  expect(projects).toHaveFocus()
+})
+
+test.each([
+  ['resume', 'Download resume'],
+  ['linkedin', 'Open LinkedIn'],
+  ['shortcut help', 'Show keyboard shortcuts'],
+] as const)('restores the invoking focus after running the %s command', (query, optionName) => {
+  vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
+  vi.spyOn(window, 'open').mockImplementation(() => null)
+  vi.spyOn(window, 'alert').mockImplementation(() => undefined)
+  render(<App />)
+
+  const trigger = within(screen.getByRole('banner')).getByRole('link', {
+    name: /download resume/i,
+  })
+  trigger.focus()
+  fireEvent.keyDown(window, { key: ':' })
+
+  const input = screen.getByRole('combobox', { name: 'Find a command' })
+  fireEvent.change(input, { target: { value: query } })
+  expect(screen.getByRole('option', { name: optionName })).toBeVisible()
+  fireEvent.keyDown(input, { key: 'Enter' })
+
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  expect(trigger).toHaveFocus()
+})
+
 test('triggers the existing resume download from its command', () => {
   const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
   render(<App />)
@@ -304,7 +360,34 @@ test('advertises optional shortcuts and provides a shortcut-help command', () =>
   fireEvent.keyDown(input, { key: 'Enter' })
 
   expect(alert).toHaveBeenCalledWith(
-    'Open commands with : or Command/Ctrl+K. Use the arrow keys to choose, Enter to run, and Escape to close.',
+    'Open commands with : or Command/Ctrl+K. Scroll with j/k, Ctrl+d/Ctrl+u, gg (top), and G (bottom). Use the arrow keys to choose, Enter to run, and Escape to close.',
   )
   alert.mockRestore()
+})
+
+test('ignores Vim motion keys while command mode is open', () => {
+  const scrollBy = vi.spyOn(window, 'scrollBy').mockImplementation(() => undefined)
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn().mockReturnValue({
+      matches: false,
+      media: '(prefers-reduced-motion: reduce)',
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }),
+  )
+  render(<App />)
+
+  fireEvent.keyDown(window, { key: 'j' })
+  expect(scrollBy).toHaveBeenCalledWith({ behavior: 'smooth', top: 72 })
+
+  fireEvent.keyDown(window, { key: ':' })
+  expect(screen.getByRole('dialog', { name: 'Portfolio commands' })).toBeVisible()
+  fireEvent.keyDown(window, { key: 'j' })
+
+  expect(scrollBy).toHaveBeenCalledOnce()
 })

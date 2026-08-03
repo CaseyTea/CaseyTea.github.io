@@ -129,6 +129,24 @@ test('moves selection with arrow keys and activates the selected command with En
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 })
 
+test('restores the invoking focus after activating a command', () => {
+  const commands = createCommands()
+  render(
+    <>
+      <button type="button">Open from here</button>
+      <CommandPalette commands={commands} />
+    </>,
+  )
+
+  const trigger = screen.getByRole('button', { name: 'Open from here' })
+  trigger.focus()
+  openWithColon()
+  fireEvent.keyDown(screen.getByRole('combobox'), { key: 'Enter' })
+
+  expect(commands[0].run).toHaveBeenCalledOnce()
+  expect(trigger).toHaveFocus()
+})
+
 test('closes with Escape and clears the previous query for the next open', () => {
   render(<CommandPalette commands={createCommands()} />)
   openWithColon()

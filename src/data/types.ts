@@ -43,6 +43,7 @@ export type Command = {
   label: string
   keywords: string[]
   run: () => void
+  restoreInvokingFocus?: boolean
 }
 
 export type CommandDefinition = Omit<Command, 'run'>

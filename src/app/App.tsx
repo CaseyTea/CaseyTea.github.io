@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { CommandPalette } from '../components/command/CommandPalette'
+import { useVimScrollMotions } from '../components/keyboard/useVimScrollMotions'
 import { AppShell } from '../components/layout/AppShell'
 import { AboutSection } from '../components/sections/AboutSection'
 import { ContactSection } from '../components/sections/ContactSection'
@@ -10,17 +12,23 @@ import { portfolioData } from '../data/portfolio'
 import type { Command } from '../data/types'
 
 function activateSection(id: string) {
+  const destination = document.getElementById(id)
   window.location.hash = id
-  document.getElementById(id)?.focus({ preventScroll: true })
+  destination?.scrollIntoView?.({ block: 'start' })
+  destination?.focus({ preventScroll: true })
 }
 
 export function App() {
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
+  useVimScrollMotions({ disabled: isCommandPaletteOpen })
+
   const commands: Command[] = [
     ...portfolioData.commandSections.map(({ id, keywords, label }) => ({
       id: `section-${id}`,
       label,
       keywords,
       run: () => activateSection(id),
+      restoreInvokingFocus: false,
     })),
     {
       id: 'resume',
@@ -44,7 +52,7 @@ export function App() {
       keywords: ['shortcut', 'help', 'keyboard', 'commands'],
       run: () => {
         window.alert(
-          'Open commands with : or Command/Ctrl+K. Use the arrow keys to choose, Enter to run, and Escape to close.',
+          'Open commands with : or Command/Ctrl+K. Scroll with j/k, Ctrl+d/Ctrl+u, gg (top), and G (bottom). Use the arrow keys to choose, Enter to run, and Escape to close.',
         )
       },
     },
@@ -69,7 +77,7 @@ export function App() {
           resumeUrl={portfolioData.resumeUrl}
         />
       </AppShell>
-      <CommandPalette commands={commands} />
+      <CommandPalette commands={commands} onOpenChange={setIsCommandPaletteOpen} />
     </>
   )
 }

@@ -4,9 +4,10 @@ import { filterCommands, useCommandPalette } from './useCommandPalette'
 
 type CommandPaletteProps = {
   commands: Command[]
+  onOpenChange?: (isOpen: boolean) => void
 }
 
-export function CommandPalette({ commands }: CommandPaletteProps) {
+export function CommandPalette({ commands, onOpenChange }: CommandPaletteProps) {
   const {
     isOpen,
     query,
@@ -20,6 +21,10 @@ export function CommandPalette({ commands }: CommandPaletteProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const matchingCommands = useMemo(() => filterCommands(commands, query), [commands, query])
   const activeCommand = matchingCommands[activeIndex]
+
+  useEffect(() => {
+    onOpenChange?.(isOpen)
+  }, [isOpen, onOpenChange])
 
   useEffect(() => {
     if (isOpen) inputRef.current?.focus()

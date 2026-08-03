@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
+import { readFileSync } from 'node:fs'
 import { vi } from 'vitest'
 import { App } from './App'
 
@@ -9,12 +10,22 @@ const sectionLinks = [
   ['Contact', '#contact'],
 ] as const
 
-test('renders Casey’s role and résumé link', () => {
+test('uses plain Resume terminology in visitor-facing app copy and metadata', () => {
+  render(<App />)
+  fireEvent.keyDown(window, { key: ':' })
+
+  expect(document.body.textContent).not.toMatch(/résumé/i)
+
+  const metadata = readFileSync('index.html', 'utf8')
+  expect(metadata).not.toMatch(/résumé/i)
+})
+
+test('renders Casey’s role and resume link', () => {
   render(<App />)
 
   expect(screen.getByRole('heading', { name: /Casey Franceschy/i })).toBeVisible()
   expect(
-    within(screen.getByRole('banner')).getByRole('link', { name: /download résumé/i }),
+    within(screen.getByRole('banner')).getByRole('link', { name: /download resume/i }),
   ).toHaveAttribute('href', '/assets/Casey_Franceschy.pdf')
 })
 
@@ -84,10 +95,10 @@ test('shows three career metrics and keeps professional work before side project
   ).toBeTruthy()
 })
 
-test('points every résumé action to the PDF asset', () => {
+test('points every resume action to the PDF asset', () => {
   render(<App />)
 
-  const resumeActions = screen.getAllByRole('link', { name: /résumé/i })
+  const resumeActions = screen.getAllByRole('link', { name: /resume/i })
 
   expect(resumeActions.length).toBeGreaterThan(1)
   resumeActions.forEach((action) => {
@@ -218,7 +229,7 @@ test('runs section commands by assigning the matching hash', () => {
   expect(window.location.hash).toBe('#projects')
 })
 
-test('triggers the existing résumé download from its command', () => {
+test('triggers the existing resume download from its command', () => {
   const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
   render(<App />)
   fireEvent.keyDown(window, { key: ':' })

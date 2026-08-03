@@ -24,7 +24,7 @@ export function OverviewSection({
           View experience
         </a>
         <a className="button-link" href={resumeUrl} download>
-          Download résumé
+          Download resume
         </a>
       </div>
 

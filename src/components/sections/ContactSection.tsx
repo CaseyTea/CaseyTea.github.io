@@ -34,7 +34,7 @@ export function ContactSection({ contacts, location, resumeUrl }: ContactSection
           <address>{location}</address>
         </div>
         <a className="contact-card" href={resumeUrl} download>
-          <span>Résumé</span>
+          <span>Resume</span>
           <strong>Download PDF</strong>
         </a>
       </div>

@@ -21,7 +21,7 @@ export function App() {
     })),
     {
       id: 'resume',
-      label: 'Download résumé',
+      label: 'Download resume',
       keywords: ['resume', 'cv', 'pdf'],
       run: () => {
         document

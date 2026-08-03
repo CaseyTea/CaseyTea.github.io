@@ -13,7 +13,7 @@ function createCommands(): Command[] {
     },
     {
       id: 'resume',
-      label: 'Download résumé',
+      label: 'Download resume',
       keywords: ['resume', 'cv', 'pdf'],
       run: vi.fn(),
     },
@@ -109,7 +109,7 @@ test('filters commands by keywords as the user types', () => {
     target: { value: 'resume' },
   })
 
-  expect(screen.getByRole('option', { name: 'Download résumé' })).toBeVisible()
+  expect(screen.getByRole('option', { name: 'Download resume' })).toBeVisible()
   expect(screen.queryByRole('option', { name: 'Go to overview' })).not.toBeInTheDocument()
 })
 

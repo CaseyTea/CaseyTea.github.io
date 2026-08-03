@@ -25,7 +25,7 @@ export function ProfileRail() {
         />
 
         <div className="profile-rail__heading">
-          <p className="profile-rail__eyebrow">Portfolio / Résumé</p>
+          <p className="profile-rail__eyebrow">Portfolio / Resume</p>
           <h1>{portfolioData.name}</h1>
           <p className="profile-rail__role">{portfolioData.title}</p>
         </div>
@@ -41,7 +41,7 @@ export function ProfileRail() {
 
       <div className="profile-rail__actions">
         <a className="button-link" href={portfolioData.resumeUrl} download>
-          Download résumé
+          Download resume
         </a>
 
         <ul className="profile-rail__contacts" aria-label="Professional profiles">

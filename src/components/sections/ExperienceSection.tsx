@@ -53,7 +53,7 @@ export function ExperienceSection({ experiences }: ExperienceSectionProps) {
   return (
     <section className="portfolio-section" id="experience" aria-labelledby="experience-heading">
       <div className="section-heading">
-        <p className="section-eyebrow">Résumé / Experience</p>
+        <p className="section-eyebrow">Resume / Experience</p>
         <h2 id="experience-heading">Experience</h2>
         <p>Roles where software, systems, and thoughtful support turned into measurable outcomes.</p>
       </div>

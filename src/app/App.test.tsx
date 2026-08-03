@@ -4,9 +4,11 @@ import { vi } from 'vitest'
 import { App } from './App'
 
 const sectionLinks = [
-  ['About', '#about'],
+  ['Overview', '#overview'],
   ['Experience', '#experience'],
   ['Projects', '#projects'],
+  ['Skills', '#skills'],
+  ['About', '#about'],
   ['Contact', '#contact'],
 ] as const
 
@@ -30,6 +32,7 @@ test('renders Casey’s role and resume link', () => {
 })
 
 test('provides semantic landmarks and accessible portfolio navigation', () => {
+  window.history.replaceState(null, '', '/')
   render(<App />)
 
   expect(screen.getByRole('link', { name: /skip to content/i })).toHaveAttribute(
@@ -45,6 +48,25 @@ test('provides semantic landmarks and accessible portfolio navigation', () => {
     expect(screen.getByRole('link', { name: label })).toHaveAttribute('href', href)
     expect(screen.getByRole('link', { name: label })).toBeVisible()
   })
+})
+
+test('identifies the active section in visible navigation and follows hash changes', () => {
+  window.history.replaceState(null, '', '/')
+  render(<App />)
+
+  const overviewLink = screen.getByRole('link', { name: 'Overview' })
+  const skillsLink = screen.getByRole('link', { name: 'Skills' })
+
+  expect(overviewLink).toHaveAttribute('aria-current', 'location')
+  expect(skillsLink).not.toHaveAttribute('aria-current')
+  expect(screen.getByLabelText('Current section: Overview')).toBeVisible()
+
+  window.history.replaceState(null, '', '/#skills')
+  fireEvent(window, new HashChangeEvent('hashchange'))
+
+  expect(overviewLink).not.toHaveAttribute('aria-current')
+  expect(skillsLink).toHaveAttribute('aria-current', 'location')
+  expect(screen.getByLabelText('Current section: Skills')).toBeVisible()
 })
 
 test('identifies Casey and labels the professional profile links', () => {
@@ -217,9 +239,17 @@ test('offers commands for every portfolio section without replacing visible navi
   expect(screen.getByRole('navigation', { name: 'Portfolio sections' })).toBeVisible()
 })
 
-test('runs section commands by assigning the matching hash', () => {
+test('runs section commands by aligning the hash, active status, and destination focus', () => {
   window.history.replaceState(null, '', '/')
   render(<App />)
+
+  const contact = screen.getByRole('region', { name: /let’s work together/i })
+  const offscreenTrigger = within(contact).getByRole('link', { name: /download pdf/i })
+  const projects = screen.getByRole('region', { name: /selected projects/i })
+  const focus = vi.spyOn(projects, 'focus')
+
+  offscreenTrigger.focus()
+  expect(offscreenTrigger).toHaveFocus()
   fireEvent.keyDown(window, { key: ':' })
 
   const input = screen.getByRole('combobox', { name: 'Find a command' })
@@ -227,6 +257,9 @@ test('runs section commands by assigning the matching hash', () => {
   fireEvent.keyDown(input, { key: 'Enter' })
 
   expect(window.location.hash).toBe('#projects')
+  expect(projects).toHaveFocus()
+  expect(focus).toHaveBeenCalledWith({ preventScroll: true })
+  expect(offscreenTrigger).not.toHaveFocus()
 })
 
 test('triggers the existing resume download from its command', () => {

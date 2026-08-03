@@ -14,7 +14,7 @@ export function OverviewSection({
   resumeUrl,
 }: OverviewSectionProps) {
   return (
-    <section className="intro-panel" id="overview" aria-labelledby="overview-heading">
+    <section className="intro-panel" id="overview" aria-labelledby="overview-heading" tabIndex={-1}>
       <p className="section-eyebrow">Software developer / problem solver</p>
       <h2 id="overview-heading">Software that makes useful work easier.</h2>
       <p className="intro-panel__lede">{introduction}</p>

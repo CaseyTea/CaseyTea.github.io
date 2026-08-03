@@ -35,12 +35,23 @@ export function useCommandPalette(commands: Command[]) {
     setIsOpen(true)
   }, [])
 
-  const close = useCallback(() => {
+  const reset = useCallback((restoreFocus: boolean) => {
     setIsOpen(false)
     updateQuery('')
     setActiveIndex(0)
-    previouslyFocusedElement.current?.focus()
+    if (restoreFocus) previouslyFocusedElement.current?.focus({ preventScroll: true })
+    previouslyFocusedElement.current = null
   }, [])
+
+  const close = useCallback(() => reset(true), [reset])
+
+  const runCommand = useCallback(
+    (command: Command) => {
+      command.run()
+      reset(false)
+    },
+    [reset],
+  )
 
   const setQuery = useCallback((value: string) => {
     updateQuery(value)
@@ -52,9 +63,8 @@ export function useCommandPalette(commands: Command[]) {
 
     if (!activeCommand) return
 
-    activeCommand.run()
-    close()
-  }, [activeIndex, close, matchingCommands])
+    runCommand(activeCommand)
+  }, [activeIndex, matchingCommands, runCommand])
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -119,6 +129,7 @@ export function useCommandPalette(commands: Command[]) {
     activeIndex,
     open,
     close,
+    runCommand,
     setQuery,
     setActiveIndex,
     runActive,

@@ -6,7 +6,12 @@ type SkillsSectionProps = {
 
 export function SkillsSection({ skillGroups }: SkillsSectionProps) {
   return (
-    <section className="portfolio-section" id="skills" aria-labelledby="skills-heading">
+    <section
+      className="portfolio-section"
+      id="skills"
+      aria-labelledby="skills-heading"
+      tabIndex={-1}
+    >
       <div className="section-heading">
         <p className="section-eyebrow">Working toolkit</p>
         <h2 id="skills-heading">Skills</h2>

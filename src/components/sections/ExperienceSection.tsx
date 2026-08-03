@@ -51,7 +51,12 @@ function ExperienceEntry({ experience }: { experience: Experience }) {
 
 export function ExperienceSection({ experiences }: ExperienceSectionProps) {
   return (
-    <section className="portfolio-section" id="experience" aria-labelledby="experience-heading">
+    <section
+      className="portfolio-section"
+      id="experience"
+      aria-labelledby="experience-heading"
+      tabIndex={-1}
+    >
       <div className="section-heading">
         <p className="section-eyebrow">Resume / Experience</p>
         <h2 id="experience-heading">Experience</h2>

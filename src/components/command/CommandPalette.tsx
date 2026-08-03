@@ -12,6 +12,7 @@ export function CommandPalette({ commands }: CommandPaletteProps) {
     query,
     activeIndex,
     close,
+    runCommand,
     setQuery,
     setActiveIndex,
   } = useCommandPalette(commands)
@@ -33,11 +34,6 @@ export function CommandPalette({ commands }: CommandPaletteProps) {
   }, [activeCommand, isOpen])
 
   if (!isOpen) return null
-
-  function run(command: Command) {
-    command.run()
-    close()
-  }
 
   return (
     <div
@@ -114,7 +110,7 @@ export function CommandPalette({ commands }: CommandPaletteProps) {
                 role="option"
                 aria-selected={index === activeIndex}
                 key={command.id}
-                onClick={() => run(command)}
+                onClick={() => runCommand(command)}
                 onMouseMove={() => setActiveIndex(index)}
               >
                 <span>{command.label}</span>

@@ -1,10 +1,18 @@
 import { portfolioData } from '../../data/portfolio'
 import type { NavItem } from '../../data/types'
 
-function SectionLink({ href, label }: NavItem) {
+type SectionLinkProps = NavItem & {
+  isCurrent: boolean
+}
+
+function SectionLink({ href, isCurrent, label }: SectionLinkProps) {
   return (
     <li>
-      <a className="profile-rail__nav-link" href={href}>
+      <a
+        aria-current={isCurrent ? 'location' : undefined}
+        className="profile-rail__nav-link"
+        href={href}
+      >
         <span aria-hidden="true">/</span>
         {label}
       </a>
@@ -12,7 +20,7 @@ function SectionLink({ href, label }: NavItem) {
   )
 }
 
-export function ProfileRail() {
+export function ProfileRail({ activeHref }: { activeHref: string }) {
   return (
     <header className="profile-rail">
       <div className="profile-rail__identity">
@@ -34,7 +42,7 @@ export function ProfileRail() {
       <nav className="profile-rail__nav" aria-label="Portfolio sections">
         <ul>
           {portfolioData.navItems.map((item) => (
-            <SectionLink key={item.href} {...item} />
+            <SectionLink isCurrent={item.href === activeHref} key={item.href} {...item} />
           ))}
         </ul>
       </nav>

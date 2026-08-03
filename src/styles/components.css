@@ -125,6 +125,7 @@
 
 .intro-panel {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   align-content: center;
   min-height: min(42rem, 76vh);
   border: 1px solid var(--color-border);
@@ -519,20 +520,35 @@ a.contact-card:hover {
 }
 
 .command-palette__backdrop {
+  --command-palette-start-space: clamp(4rem, 12dvh, 8rem);
+  --command-palette-end-space: var(--space-3);
+
   position: fixed;
   z-index: 20;
   inset: 0;
   display: grid;
   place-items: start center;
+  height: 100vh;
+  height: 100dvh;
   overflow-y: auto;
   background: rgb(2 5 3 / 78%);
-  padding: clamp(4rem, 12vh, 8rem) var(--space-3) var(--space-3);
+  padding: var(--command-palette-start-space) var(--space-3)
+    var(--command-palette-end-space);
   backdrop-filter: blur(0.4rem);
 }
 
 .command-palette {
+  display: flex;
+  flex-direction: column;
   width: min(100%, 42rem);
-  max-height: min(38rem, calc(100vh - 8rem));
+  max-height: min(
+    38rem,
+    calc(100vh - var(--command-palette-start-space) - var(--command-palette-end-space))
+  );
+  max-height: min(
+    38rem,
+    calc(100dvh - var(--command-palette-start-space) - var(--command-palette-end-space))
+  );
   overflow: hidden;
   border: 1px solid var(--color-accent);
   border-radius: var(--radius-medium);
@@ -609,7 +625,9 @@ a.contact-card:hover {
 }
 
 .command-palette__options {
-  max-height: min(22rem, 44vh);
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 22rem;
   overflow-y: auto;
   margin: 0;
   padding: var(--space-1);
@@ -654,6 +672,22 @@ a.contact-card:hover {
   padding: var(--space-2) var(--space-3);
 }
 
+@media (max-height: 32rem) {
+  .command-palette__backdrop {
+    --command-palette-start-space: var(--space-2);
+    --command-palette-end-space: var(--space-2);
+  }
+}
+
+@media (max-width: 70rem) {
+  .featured-preview,
+  .about-section,
+  .project-grid,
+  .skills-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 48rem) {
   .profile-rail__identity {
     display: grid;
@@ -691,16 +725,6 @@ a.contact-card:hover {
   .intro-panel {
     min-height: 32rem;
     padding: var(--space-4);
-  }
-
-  .featured-preview,
-  .about-section {
-    grid-template-columns: 1fr;
-  }
-
-  .project-grid,
-  .skills-grid {
-    grid-template-columns: 1fr;
   }
 }
 

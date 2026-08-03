@@ -1,6 +1,11 @@
 export function AboutSection() {
   return (
-    <section className="portfolio-section about-section" id="about" aria-labelledby="about-heading">
+    <section
+      className="portfolio-section about-section"
+      id="about"
+      aria-labelledby="about-heading"
+      tabIndex={-1}
+    >
       <div className="section-heading">
         <p className="section-eyebrow">Away from the ticket queue</p>
         <h2 id="about-heading">About me</h2>

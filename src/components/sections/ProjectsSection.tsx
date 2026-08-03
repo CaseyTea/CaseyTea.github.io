@@ -69,7 +69,12 @@ export function ProjectsSection({ projects }: ProjectsSectionProps) {
   const sideProjects = projects.filter(({ kind }) => kind === 'side-project')
 
   return (
-    <section className="portfolio-section" id="projects" aria-labelledby="projects-heading">
+    <section
+      className="portfolio-section"
+      id="projects"
+      aria-labelledby="projects-heading"
+      tabIndex={-1}
+    >
       <div className="section-heading">
         <p className="section-eyebrow">Case studies / Work</p>
         <h2 id="projects-heading">Selected projects</h2>

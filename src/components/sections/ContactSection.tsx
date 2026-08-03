@@ -12,6 +12,7 @@ export function ContactSection({ contacts, location, resumeUrl }: ContactSection
       className="portfolio-section contact-section"
       id="contact"
       aria-labelledby="contact-heading"
+      tabIndex={-1}
     >
       <div className="section-heading">
         <p className="section-eyebrow">Contact</p>

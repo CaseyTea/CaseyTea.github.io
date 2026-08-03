@@ -9,15 +9,18 @@ import { SkillsSection } from '../components/sections/SkillsSection'
 import { portfolioData } from '../data/portfolio'
 import type { Command } from '../data/types'
 
+function activateSection(id: string) {
+  window.location.hash = id
+  document.getElementById(id)?.focus({ preventScroll: true })
+}
+
 export function App() {
   const commands: Command[] = [
     ...portfolioData.commandSections.map(({ id, keywords, label }) => ({
       id: `section-${id}`,
       label,
       keywords,
-      run: () => {
-        window.location.hash = id
-      },
+      run: () => activateSection(id),
     })),
     {
       id: 'resume',

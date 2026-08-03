@@ -9,9 +9,11 @@ export const portfolioData: PortfolioData = {
   resumeUrl: '/assets/Casey_Franceschy.pdf',
   location: 'Westminster, California',
   navItems: [
-    { label: 'About', href: '#about' },
+    { label: 'Overview', href: '#overview' },
     { label: 'Experience', href: '#experience' },
     { label: 'Projects', href: '#projects' },
+    { label: 'Skills', href: '#skills' },
+    { label: 'About', href: '#about' },
     { label: 'Contact', href: '#contact' },
   ],
   commandSections: [

@@ -43,7 +43,10 @@ export function CommandPalette({ commands }: CommandPaletteProps) {
     <div
       className="command-palette__backdrop"
       onMouseDown={(event) => {
-        if (event.currentTarget === event.target) close()
+        if (event.currentTarget === event.target) {
+          event.preventDefault()
+          close()
+        }
       }}
     >
       <div

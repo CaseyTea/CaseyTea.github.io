@@ -82,6 +82,12 @@ export function useCommandPalette(commands: Command[]) {
         return
       }
 
+      const isCommandInput =
+        event.target instanceof HTMLInputElement &&
+        event.target.getAttribute('role') === 'combobox'
+
+      if (!isCommandInput) return
+
       if (event.key === 'ArrowDown' && matchingCommands.length > 0) {
         event.preventDefault()
         setActiveIndex((current) => (current + 1) % matchingCommands.length)

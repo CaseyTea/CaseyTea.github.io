@@ -129,6 +129,37 @@ test('keeps Tab focus within the modal dialog', () => {
   expect(input).toHaveFocus()
 })
 
+test('does not run the active command when Enter is pressed on the Close button', () => {
+  const commands = createCommands()
+  render(<CommandPalette commands={commands} />)
+  openWithColon()
+
+  const input = screen.getByRole('combobox', { name: 'Find a command' })
+  const close = screen.getByRole('button', { name: 'Close Esc' })
+  fireEvent.keyDown(input, { key: 'Tab' })
+  fireEvent.keyDown(close, { key: 'Enter' })
+
+  expect(commands[0].run).not.toHaveBeenCalled()
+})
+
+test('prevents backdrop focus transfer and restores the previous focus', () => {
+  render(
+    <>
+      <button type="button">Open from here</button>
+      <CommandPalette commands={createCommands()} />
+    </>,
+  )
+
+  const trigger = screen.getByRole('button', { name: 'Open from here' })
+  trigger.focus()
+  openWithColon()
+
+  const backdrop = screen.getByRole('dialog', { name: 'Portfolio commands' }).parentElement
+  expect(backdrop).not.toBeNull()
+  expect(fireEvent.mouseDown(backdrop!)).toBe(false)
+  expect(trigger).toHaveFocus()
+})
+
 test('shows an empty result message when no command matches', () => {
   render(<CommandPalette commands={createCommands()} />)
   openWithColon()

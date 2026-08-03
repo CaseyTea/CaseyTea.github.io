@@ -2,10 +2,11 @@ import type { Contact } from '../../data/types'
 
 type ContactSectionProps = {
   contacts: Contact[]
+  location: string
   resumeUrl: string
 }
 
-export function ContactSection({ contacts, resumeUrl }: ContactSectionProps) {
+export function ContactSection({ contacts, location, resumeUrl }: ContactSectionProps) {
   return (
     <section
       className="portfolio-section contact-section"
@@ -30,7 +31,7 @@ export function ContactSection({ contacts, resumeUrl }: ContactSectionProps) {
         ))}
         <div className="contact-card contact-card--static">
           <span>Location</span>
-          <address>Westminster, California</address>
+          <address>{location}</address>
         </div>
         <a className="contact-card" href={resumeUrl} download>
           <span>Résumé</span>

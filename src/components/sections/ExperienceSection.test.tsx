@@ -12,14 +12,15 @@ test('keeps experience details collapsed until their disclosure button is used',
 
   expect(disclosure).toHaveAttribute('aria-expanded', 'false')
   expect(disclosure).toHaveAttribute('aria-controls', 'analyst-programmer-details')
-  expect(screen.queryByText(/Developed a modular \.NET 8 Minimal API/i)).not.toBeInTheDocument()
+  expect(document.getElementById('analyst-programmer-details')).toHaveAttribute('hidden')
+  expect(screen.getByText(/Developed a modular \.NET 8 Minimal API/i)).not.toBeVisible()
 
   fireEvent.click(disclosure)
 
   expect(disclosure).toHaveAttribute('aria-expanded', 'true')
   expect(disclosure).toHaveAccessibleName(/hide details/i)
   expect(screen.getByText(/Developed a modular \.NET 8 Minimal API/i)).toBeVisible()
-  expect(document.getElementById('analyst-programmer-details')).toBeVisible()
+  expect(document.getElementById('analyst-programmer-details')).not.toHaveAttribute('hidden')
 })
 
 test('gives each experience disclosure its own controlled detail region', () => {

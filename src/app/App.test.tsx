@@ -93,3 +93,96 @@ test('points every résumé action to the PDF asset', () => {
     expect(action).toHaveAttribute('href', '/assets/Casey_Franceschy.pdf')
   })
 })
+
+test('keeps personal topics in the About section', () => {
+  render(<App />)
+
+  const about = screen.getByRole('region', { name: /about me/i })
+  const topics = [
+    /mechanical keyboards/i,
+    /Neovim/i,
+    /Vim motions/i,
+    /code jams/i,
+    /frogs/i,
+    /learning through playful projects/i,
+  ]
+
+  topics.forEach((topic) => expect(within(about).getByText(topic)).toBeVisible())
+})
+
+test('provides contact channels, verified location, and no contact form', () => {
+  render(<App />)
+
+  const contact = screen.getByRole('region', { name: /let’s work together/i })
+
+  expect(within(contact).getByRole('link', { name: /email/i })).toHaveAttribute(
+    'href',
+    'mailto:casey.franceschy@gmail.com',
+  )
+  expect(within(contact).getByRole('link', { name: /github/i })).toHaveAttribute(
+    'href',
+    'https://github.com/CaseyTea',
+  )
+  expect(within(contact).getByRole('link', { name: /linkedin/i })).toHaveAttribute(
+    'href',
+    'https://www.linkedin.com/in/casey-franceschy-694823124/',
+  )
+  expect(within(contact).getByText('Westminster, California')).toBeVisible()
+  expect(contact.querySelector('form')).not.toBeInTheDocument()
+})
+
+test('groups evidence-backed skills without ratings or progress bars', () => {
+  render(<App />)
+
+  const skills = screen.getByRole('region', { name: /^skills$/i })
+
+  expect(within(skills).getByRole('heading', { name: 'Application development' })).toBeVisible()
+  expect(within(skills).getByRole('heading', { name: 'Data and APIs' })).toBeVisible()
+  expect(within(skills).getByRole('heading', { name: 'Cloud and delivery' })).toBeVisible()
+  expect(within(skills).getByText('.NET 8')).toBeVisible()
+  expect(within(skills).getByText('REST APIs')).toBeVisible()
+  expect(within(skills).getByText('Azure DevOps')).toBeVisible()
+  expect(within(skills).queryByRole('progressbar')).not.toBeInTheDocument()
+  expect(skills.querySelector('meter')).not.toBeInTheDocument()
+})
+
+test('renders project evidence and only the links available for each project', () => {
+  render(<App />)
+
+  const usernameGenerator = screen
+    .getByRole('heading', { name: 'Username Generator API' })
+    .closest('article')
+  const asciiMon = screen.getByRole('heading', { name: 'GuessThatAsciiMon' }).closest('article')
+  const mockBot = screen.getByRole('heading', { name: 'MockBot' }).closest('article')
+
+  expect(usernameGenerator).not.toBeNull()
+  expect(within(usernameGenerator!).getByText(/collision-free usernames/i)).toBeVisible()
+  expect(within(usernameGenerator!).getByText(/Modernized a legacy SQL-based/i)).toBeVisible()
+  expect(within(usernameGenerator!).getByText(/Built the \.NET Minimal API/i)).toBeVisible()
+  expect(within(usernameGenerator!).getByRole('img')).toHaveAttribute(
+    'src',
+    '/assets/projects/project-usernamegen.png',
+  )
+  expect(
+    within(
+      within(usernameGenerator!).getByRole('list', {
+        name: 'Username Generator API technologies',
+      }),
+    ).getAllByRole('listitem'),
+  ).toHaveLength(4)
+  expect(within(usernameGenerator!).queryByRole('link')).not.toBeInTheDocument()
+
+  expect(asciiMon).not.toBeNull()
+  expect(within(asciiMon!).getByRole('link', { name: 'View live project' })).toHaveAttribute(
+    'href',
+    'https://guessthatasciimon-hgdfeafdhqdddef0.canadacentral-01.azurewebsites.net/',
+  )
+  expect(within(asciiMon!).queryByRole('link', { name: 'View source' })).not.toBeInTheDocument()
+
+  expect(mockBot).not.toBeNull()
+  expect(within(mockBot!).getByRole('link', { name: 'View source' })).toHaveAttribute(
+    'href',
+    'https://github.com/CaseyTea/Mockbot',
+  )
+  expect(within(mockBot!).queryByRole('link', { name: 'View live project' })).not.toBeInTheDocument()
+})

@@ -7,6 +7,7 @@ export const portfolioData: PortfolioData = {
     'Developer building practical tools, APIs, and experiments—at work and for fun. Interested in teams that enjoy solving meaningful problems and learning together.',
   avatarUrl: '/assets/my-memoji.png',
   resumeUrl: '/assets/Casey_Franceschy.pdf',
+  location: 'Westminster, California',
   navItems: [
     { label: 'About', href: '#about' },
     { label: 'Experience', href: '#experience' },

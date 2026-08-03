@@ -19,3 +19,7 @@ test('includes technologies for every project entry', () => {
 test('presents exactly three verified overview metrics', () => {
   expect(portfolioData.metrics).toHaveLength(3)
 })
+
+test('provides the verified location used by the contact section', () => {
+  expect(portfolioData.location).toBe('Westminster, California')
+})

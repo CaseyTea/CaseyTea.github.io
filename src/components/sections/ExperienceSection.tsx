@@ -33,20 +33,18 @@ function ExperienceEntry({ experience }: { experience: Experience }) {
         <span aria-hidden="true">{isExpanded ? '−' : '+'}</span>
       </button>
 
-      {isExpanded ? (
-        <div className="experience-card__details" id={detailsId}>
-          <ul>
-            {experience.highlights.map((highlight) => (
-              <li key={highlight}>{highlight}</li>
-            ))}
-          </ul>
-          <ul className="tag-list" aria-label={`${experience.title} technologies`}>
-            {experience.technologies.map((technology) => (
-              <li key={technology}>{technology}</li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
+      <div className="experience-card__details" id={detailsId} hidden={!isExpanded}>
+        <ul>
+          {experience.highlights.map((highlight) => (
+            <li key={highlight}>{highlight}</li>
+          ))}
+        </ul>
+        <ul className="tag-list" aria-label={`${experience.title} technologies`}>
+          {experience.technologies.map((technology) => (
+            <li key={technology}>{technology}</li>
+          ))}
+        </ul>
+      </div>
     </article>
   )
 }

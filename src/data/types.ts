@@ -44,6 +44,7 @@ export type PortfolioData = {
   introduction: string
   avatarUrl: string
   resumeUrl: string
+  location: string
   navItems: NavItem[]
   contacts: Contact[]
   metrics: Metric[]

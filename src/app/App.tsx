@@ -20,7 +20,11 @@ export function App() {
       <ProjectsSection projects={portfolioData.projects} />
       <SkillsSection skillGroups={portfolioData.skillGroups} />
       <AboutSection />
-      <ContactSection contacts={portfolioData.contacts} resumeUrl={portfolioData.resumeUrl} />
+      <ContactSection
+        contacts={portfolioData.contacts}
+        location={portfolioData.location}
+        resumeUrl={portfolioData.resumeUrl}
+      />
     </AppShell>
   )
 }

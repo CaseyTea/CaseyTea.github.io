@@ -4,6 +4,10 @@ import { portfolioData } from '../../data/portfolio'
 import { ProfileRail } from './ProfileRail'
 import { StatusLine } from './StatusLine'
 
+type AppShellProps = PropsWithChildren<{
+  vimShortcutsEnabled: boolean
+}>
+
 function getActiveSection() {
   const currentHash = window.location.hash
 
@@ -12,7 +16,7 @@ function getActiveSection() {
   )
 }
 
-export function AppShell({ children }: PropsWithChildren) {
+export function AppShell({ children, vimShortcutsEnabled }: AppShellProps) {
   const [activeSection, setActiveSection] = useState(getActiveSection)
 
   useEffect(() => {
@@ -37,7 +41,10 @@ export function AppShell({ children }: PropsWithChildren) {
           <main id="main-content" tabIndex={-1}>
             {children}
           </main>
-          <StatusLine activeSection={activeSection.label} />
+          <StatusLine
+            activeSection={activeSection.label}
+            vimShortcutsEnabled={vimShortcutsEnabled}
+          />
         </div>
       </div>
     </>

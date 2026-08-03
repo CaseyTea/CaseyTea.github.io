@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { CommandPalette } from '../components/command/CommandPalette'
 import { useVimScrollMotions } from '../components/keyboard/useVimScrollMotions'
+import { useVimShortcutsPreference } from '../components/keyboard/useVimShortcutsPreference'
 import { AppShell } from '../components/layout/AppShell'
 import { AboutSection } from '../components/sections/AboutSection'
 import { ContactSection } from '../components/sections/ContactSection'
@@ -20,7 +21,9 @@ function activateSection(id: string) {
 
 export function App() {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
-  useVimScrollMotions({ disabled: isCommandPaletteOpen })
+  const { enabled: vimShortcutsEnabled, toggle: toggleVimShortcuts } =
+    useVimShortcutsPreference()
+  useVimScrollMotions({ disabled: isCommandPaletteOpen || !vimShortcutsEnabled })
 
   const commands: Command[] = [
     ...portfolioData.commandSections.map(({ id, keywords, label }) => ({
@@ -47,12 +50,18 @@ export function App() {
       run: () => window.open(href, '_blank', 'noopener,noreferrer'),
     })),
     {
+      id: 'toggle-vim-shortcuts',
+      label: `${vimShortcutsEnabled ? 'Disable' : 'Enable'} Vim scroll shortcuts`,
+      keywords: ['vim', 'scroll', 'shortcut', 'keyboard', 'toggle'],
+      run: toggleVimShortcuts,
+    },
+    {
       id: 'shortcut-help',
       label: 'Show keyboard shortcuts',
       keywords: ['shortcut', 'help', 'keyboard', 'commands'],
       run: () => {
         window.alert(
-          'Open commands with : or Command/Ctrl+K. Scroll with j/k, Ctrl+d/Ctrl+u, gg (top), and G (bottom). Use the arrow keys to choose, Enter to run, and Escape to close.',
+          `Open commands with : or Command/Ctrl+K. Vim scroll shortcuts are ${vimShortcutsEnabled ? 'enabled and can be disabled' : 'disabled and can be enabled'} from this command palette. Scroll with j/k, Ctrl+d/Ctrl+u, gg (top), and G (bottom). Use the arrow keys to choose, Enter to run, and Escape to close.`,
         )
       },
     },
@@ -60,7 +69,7 @@ export function App() {
 
   return (
     <>
-      <AppShell>
+      <AppShell vimShortcutsEnabled={vimShortcutsEnabled}>
         <OverviewSection
           introduction={portfolioData.introduction}
           metrics={portfolioData.metrics}

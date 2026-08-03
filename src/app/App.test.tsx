@@ -1,7 +1,38 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { readFileSync } from 'node:fs'
-import { afterEach, vi } from 'vitest'
+import { afterEach, beforeEach, vi } from 'vitest'
 import { App } from './App'
+
+const vimShortcutsStorageKey = 'portfolio:vim-scroll-shortcuts-enabled'
+
+function createMemoryStorage(): Storage {
+  const values = new Map<string, string>()
+
+  return {
+    get length() {
+      return values.size
+    },
+    clear() {
+      values.clear()
+    },
+    getItem(key) {
+      return values.get(key) ?? null
+    },
+    key(index) {
+      return Array.from(values.keys())[index] ?? null
+    },
+    removeItem(key) {
+      values.delete(key)
+    },
+    setItem(key, value) {
+      values.set(key, value)
+    },
+  }
+}
+
+beforeEach(() => {
+  vi.stubGlobal('localStorage', createMemoryStorage())
+})
 
 afterEach(() => {
   vi.restoreAllMocks()
@@ -360,7 +391,7 @@ test('advertises optional shortcuts and provides a shortcut-help command', () =>
   fireEvent.keyDown(input, { key: 'Enter' })
 
   expect(alert).toHaveBeenCalledWith(
-    'Open commands with : or Command/Ctrl+K. Scroll with j/k, Ctrl+d/Ctrl+u, gg (top), and G (bottom). Use the arrow keys to choose, Enter to run, and Escape to close.',
+    'Open commands with : or Command/Ctrl+K. Vim scroll shortcuts are enabled and can be disabled from this command palette. Scroll with j/k, Ctrl+d/Ctrl+u, gg (top), and G (bottom). Use the arrow keys to choose, Enter to run, and Escape to close.',
   )
   alert.mockRestore()
 })
@@ -390,4 +421,71 @@ test('ignores Vim motion keys while command mode is open', () => {
   fireEvent.keyDown(window, { key: 'j' })
 
   expect(scrollBy).toHaveBeenCalledOnce()
+})
+
+test('restores the disabled preference and leaves every Vim motion untouched', () => {
+  const storage = createMemoryStorage()
+  storage.setItem(vimShortcutsStorageKey, 'false')
+  vi.stubGlobal('localStorage', storage)
+  const scrollBy = vi.spyOn(window, 'scrollBy').mockImplementation(() => undefined)
+  const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
+  render(<App />)
+
+  expect(screen.getByText('Vim scroll keys: Off')).toBeVisible()
+
+  expect(fireEvent.keyDown(window, { key: 'j' })).toBe(true)
+  expect(fireEvent.keyDown(window, { key: 'k' })).toBe(true)
+  expect(fireEvent.keyDown(window, { key: 'd', ctrlKey: true })).toBe(true)
+  expect(fireEvent.keyDown(window, { key: 'u', ctrlKey: true })).toBe(true)
+  expect(fireEvent.keyDown(window, { key: 'g' })).toBe(true)
+  expect(fireEvent.keyDown(window, { key: 'g' })).toBe(true)
+  expect(fireEvent.keyDown(window, { key: 'G' })).toBe(true)
+  expect(scrollBy).not.toHaveBeenCalled()
+  expect(scrollTo).not.toHaveBeenCalled()
+
+  fireEvent.keyDown(window, { key: ':' })
+  expect(screen.getByRole('option', { name: 'Enable Vim scroll shortcuts' })).toBeVisible()
+})
+
+test('toggles Vim shortcuts from the command palette and persists each update', () => {
+  const storage = createMemoryStorage()
+  vi.stubGlobal('localStorage', storage)
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn().mockReturnValue({
+      matches: false,
+      media: '(prefers-reduced-motion: reduce)',
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }),
+  )
+  const scrollBy = vi.spyOn(window, 'scrollBy').mockImplementation(() => undefined)
+  render(<App />)
+
+  expect(screen.getByText('Vim scroll keys: On')).toHaveAttribute('aria-live', 'polite')
+  fireEvent.keyDown(window, { key: ':' })
+  let input = screen.getByRole('combobox', { name: 'Find a command' })
+  fireEvent.change(input, { target: { value: 'disable vim' } })
+  expect(screen.getByRole('option', { name: 'Disable Vim scroll shortcuts' })).toBeVisible()
+  fireEvent.keyDown(input, { key: 'Enter' })
+
+  expect(storage.getItem(vimShortcutsStorageKey)).toBe('false')
+  expect(screen.getByText('Vim scroll keys: Off')).toBeVisible()
+  expect(fireEvent.keyDown(window, { key: 'd', ctrlKey: true })).toBe(true)
+  expect(scrollBy).not.toHaveBeenCalled()
+
+  fireEvent.keyDown(window, { key: ':' })
+  input = screen.getByRole('combobox', { name: 'Find a command' })
+  fireEvent.change(input, { target: { value: 'enable vim' } })
+  expect(screen.getByRole('option', { name: 'Enable Vim scroll shortcuts' })).toBeVisible()
+  fireEvent.keyDown(input, { key: 'Enter' })
+
+  expect(storage.getItem(vimShortcutsStorageKey)).toBe('true')
+  expect(screen.getByText('Vim scroll keys: On')).toBeVisible()
+  expect(fireEvent.keyDown(window, { key: 'j' })).toBe(false)
+  expect(scrollBy).toHaveBeenCalledWith({ behavior: 'smooth', top: 72 })
 })

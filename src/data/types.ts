@@ -38,6 +38,15 @@ export type Contact = {
   href: string
 }
 
+export type Command = {
+  id: string
+  label: string
+  keywords: string[]
+  run: () => void
+}
+
+export type CommandDefinition = Omit<Command, 'run'>
+
 export type PortfolioData = {
   name: string
   title: string
@@ -46,6 +55,7 @@ export type PortfolioData = {
   resumeUrl: string
   location: string
   navItems: NavItem[]
+  commandSections: CommandDefinition[]
   contacts: Contact[]
   metrics: Metric[]
   experience: Experience[]

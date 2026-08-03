@@ -10,6 +10,7 @@ export function StatusLine({ activeSection }: StatusLineProps) {
         Portfolio online
       </span>
       <span aria-label={`Current section: ${activeSection}`}>Viewing / {activeSection}</span>
+      <span>Commands: : or Command/Ctrl+K (optional)</span>
     </footer>
   )
 }

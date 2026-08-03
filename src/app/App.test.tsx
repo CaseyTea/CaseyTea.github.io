@@ -1,4 +1,5 @@
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
+import { vi } from 'vitest'
 import { App } from './App'
 
 const sectionLinks = [
@@ -185,4 +186,81 @@ test('renders project evidence and only the links available for each project', (
     'https://github.com/CaseyTea/Mockbot',
   )
   expect(within(mockBot!).queryByRole('link', { name: 'View live project' })).not.toBeInTheDocument()
+})
+
+test('offers commands for every portfolio section without replacing visible navigation', () => {
+  render(<App />)
+
+  fireEvent.keyDown(window, { key: ':' })
+
+  const options = within(screen.getByRole('listbox', { name: 'Available commands' }))
+  ;[
+    'Go to overview',
+    'Go to experience',
+    'Go to projects',
+    'Go to skills',
+    'Go to about',
+    'Go to contact',
+  ].forEach((label) => expect(options.getByRole('option', { name: label })).toBeVisible())
+
+  expect(screen.getByRole('navigation', { name: 'Portfolio sections' })).toBeVisible()
+})
+
+test('runs section commands by assigning the matching hash', () => {
+  window.history.replaceState(null, '', '/')
+  render(<App />)
+  fireEvent.keyDown(window, { key: ':' })
+
+  const input = screen.getByRole('combobox', { name: 'Find a command' })
+  fireEvent.change(input, { target: { value: 'projects' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+
+  expect(window.location.hash).toBe('#projects')
+})
+
+test('triggers the existing résumé download from its command', () => {
+  const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
+  render(<App />)
+  fireEvent.keyDown(window, { key: ':' })
+
+  const input = screen.getByRole('combobox', { name: 'Find a command' })
+  fireEvent.change(input, { target: { value: 'resume' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+
+  expect(click).toHaveBeenCalledOnce()
+  click.mockRestore()
+})
+
+test('opens external contact destinations from commands', () => {
+  const open = vi.spyOn(window, 'open').mockImplementation(() => null)
+  render(<App />)
+  fireEvent.keyDown(window, { key: ':' })
+
+  const input = screen.getByRole('combobox', { name: 'Find a command' })
+  fireEvent.change(input, { target: { value: 'linkedin' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+
+  expect(open).toHaveBeenCalledWith(
+    'https://www.linkedin.com/in/casey-franceschy-694823124/',
+    '_blank',
+    'noopener,noreferrer',
+  )
+  open.mockRestore()
+})
+
+test('advertises optional shortcuts and provides a shortcut-help command', () => {
+  const alert = vi.spyOn(window, 'alert').mockImplementation(() => undefined)
+  render(<App />)
+
+  expect(screen.getByText('Commands: : or Command/Ctrl+K (optional)')).toBeVisible()
+
+  fireEvent.keyDown(window, { key: ':' })
+  const input = screen.getByRole('combobox', { name: 'Find a command' })
+  fireEvent.change(input, { target: { value: 'shortcut help' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+
+  expect(alert).toHaveBeenCalledWith(
+    'Open commands with : or Command/Ctrl+K. Use the arrow keys to choose, Enter to run, and Escape to close.',
+  )
+  alert.mockRestore()
 })

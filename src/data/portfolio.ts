@@ -14,6 +14,38 @@ export const portfolioData: PortfolioData = {
     { label: 'Projects', href: '#projects' },
     { label: 'Contact', href: '#contact' },
   ],
+  commandSections: [
+    {
+      id: 'overview',
+      label: 'Go to overview',
+      keywords: ['home', 'introduction', 'intro'],
+    },
+    {
+      id: 'experience',
+      label: 'Go to experience',
+      keywords: ['work', 'career', 'history'],
+    },
+    {
+      id: 'projects',
+      label: 'Go to projects',
+      keywords: ['portfolio', 'work', 'case studies'],
+    },
+    {
+      id: 'skills',
+      label: 'Go to skills',
+      keywords: ['technology', 'tools', 'stack'],
+    },
+    {
+      id: 'about',
+      label: 'Go to about',
+      keywords: ['bio', 'personal', 'neovim'],
+    },
+    {
+      id: 'contact',
+      label: 'Go to contact',
+      keywords: ['email', 'connect', 'hire'],
+    },
+  ],
   contacts: [
     { label: 'Email', href: 'mailto:casey.franceschy@gmail.com' },
     { label: 'GitHub', href: 'https://github.com/CaseyTea' },

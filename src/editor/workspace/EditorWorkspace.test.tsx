@@ -1,0 +1,115 @@
+import { fireEvent, render, screen, within } from '@testing-library/react'
+import { vi } from 'vitest'
+import { createBufferRegistry } from '../buffers/createBufferRegistry'
+import type { BufferId } from '../buffers/types'
+import { portfolioData } from '../../data/portfolio'
+import { EditorWorkspace } from './EditorWorkspace'
+
+const registry = createBufferRegistry(portfolioData)
+const projectId = registry.primaryIds.find((id) => id.startsWith('project-')) as BufferId
+
+function renderWorkspace(overrides: Partial<React.ComponentProps<typeof EditorWorkspace>> = {}) {
+  const onOpenBuffer = vi.fn()
+  const onCycleBuffer = vi.fn()
+  const onToggleVim = vi.fn()
+
+  render(
+    <EditorWorkspace
+      registry={registry}
+      activeId={projectId}
+      openIds={['readme', projectId]}
+      onOpenBuffer={onOpenBuffer}
+      onCycleBuffer={onCycleBuffer}
+      vimEnabled
+      onToggleVim={onToggleVim}
+      statusMessage="project loaded"
+      {...overrides}
+    >
+      <article>Buffer content</article>
+    </EditorWorkspace>,
+  )
+
+  return { onOpenBuffer, onCycleBuffer, onToggleVim }
+}
+
+test('renders the editor identity and visitor controls', () => {
+  const { onOpenBuffer } = renderWorkspace()
+
+  const banner = screen.getByRole('banner')
+  expect(within(banner).getByText('Casey Franceschy')).toBeVisible()
+  expect(within(banner).getByText('Software Developer')).toBeVisible()
+  expect(within(banner).getByRole('link', { name: 'Download resume' })).toHaveAttribute(
+    'href',
+    '/assets/Casey_Franceschy.pdf',
+  )
+
+  fireEvent.click(within(banner).getByRole('button', { name: 'Keyboard shortcuts' }))
+  expect(onOpenBuffer).toHaveBeenCalledWith('help')
+})
+
+test('provides semantic file navigation and identifies the current file', () => {
+  const { onOpenBuffer, onToggleVim } = renderWorkspace()
+  const explorer = screen.getByRole('navigation', { name: 'Files' })
+  const activeBuffer = registry.byId.get(projectId)!
+
+  expect(within(explorer).getByText('Explorer')).toBeVisible()
+  expect(within(explorer).getByRole('button', { name: activeBuffer.path })).toHaveAttribute(
+    'aria-current',
+    'page',
+  )
+
+  fireEvent.click(within(explorer).getByRole('button', { name: 'contact.md' }))
+  expect(onOpenBuffer).toHaveBeenCalledWith('contact')
+
+  fireEvent.click(within(explorer).getByRole('button', { name: 'Editor keys: on' }))
+  expect(onToggleVim).toHaveBeenCalledOnce()
+})
+
+test('renders semantic tabs with short labels and accessible full paths', () => {
+  const { onOpenBuffer, onCycleBuffer } = renderWorkspace()
+  const tabs = screen.getByRole('tablist', { name: 'Open files' })
+  const project = registry.byId.get(projectId)!
+  const projectTab = within(tabs).getByRole('tab', { name: `Open ${project.path}` })
+  const readmeTab = within(tabs).getByRole('tab', { name: 'Open README.md' })
+
+  expect(projectTab).toHaveTextContent(project.filename)
+  expect(projectTab).not.toHaveTextContent(project.path)
+  expect(projectTab).toHaveAttribute('aria-selected', 'true')
+  expect(readmeTab).toHaveAttribute('aria-selected', 'false')
+
+  fireEvent.click(readmeTab)
+  expect(onOpenBuffer).toHaveBeenCalledWith('readme')
+
+  fireEvent.keyDown(tabs, { key: 'ArrowRight' })
+  fireEvent.keyDown(tabs, { key: 'ArrowLeft' })
+  expect(onCycleBuffer).toHaveBeenNthCalledWith(1, 1)
+  expect(onCycleBuffer).toHaveBeenNthCalledWith(2, -1)
+})
+
+test('labels the buffer slot and exposes editor status fields', () => {
+  renderWorkspace()
+  const activeBuffer = registry.byId.get(projectId)!
+
+  expect(screen.getByRole('main')).toHaveAttribute('id', 'active-buffer')
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', activeBuffer.path)
+  expect(within(screen.getByRole('main')).getByText('Buffer content')).toBeVisible()
+
+  const status = screen.getByRole('contentinfo', { name: 'Editor status' })
+  expect(within(status).getByText('-- NORMAL --')).toBeVisible()
+  expect(within(status).getByText(activeBuffer.path)).toBeVisible()
+  expect(within(status).getByText('vim')).toBeVisible()
+  expect(within(status).getByText('1,1')).toBeVisible()
+  expect(within(status).getByText('Top')).toBeVisible()
+  expect(within(status).getByRole('status')).toHaveTextContent('project loaded')
+})
+
+test('uses reading status when editor keys are disabled', () => {
+  renderWorkspace({ vimEnabled: false, statusMessage: null })
+
+  const status = screen.getByRole('contentinfo', { name: 'Editor status' })
+  expect(within(status).getByText('-- READING --')).toBeVisible()
+  expect(within(status).getByText('no-vim')).toBeVisible()
+  expect(within(status).getByRole('status')).toHaveTextContent(
+    'click a file, or turn editor keys on in the sidebar',
+  )
+})

@@ -1,0 +1,23 @@
+:root {
+  --editor-forest-950: #0b120e;
+  --editor-forest-900: #101a14;
+  --editor-forest-800: #16241b;
+  --editor-forest-700: #1c2e22;
+  --editor-forest-border: #24352a;
+  --editor-forest-border-strong: #33473a;
+  --editor-parchment-100: #f3eee1;
+  --editor-parchment-200: #e9e2d0;
+  --editor-parchment-border: #c9c0a7;
+  --editor-ink: #1e231f;
+  --editor-chrome-text: #d3dcd1;
+  --editor-chrome-strong: #f0f4ee;
+  --editor-chrome-muted: #8a9a8b;
+  --editor-chrome-subtle: #6b7a6c;
+  --editor-moss: #6d8e5d;
+  --editor-moss-soft: #93b184;
+  --editor-rust: #a94f1e;
+  --editor-rust-strong: #8e4118;
+  --editor-font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --editor-font-serif: Georgia, serif;
+  --editor-desktop-breakpoint: 48rem;
+}

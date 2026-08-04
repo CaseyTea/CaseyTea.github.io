@@ -324,39 +324,87 @@ test('provides shortcut help through both conventional and command controls', ()
   )
 })
 
-test('ignores Vim motion keys while command mode is open', () => {
-  const scrollBy = vi.spyOn(window, 'scrollBy').mockImplementation(() => undefined)
-  vi.stubGlobal(
-    'matchMedia',
-    vi.fn().mockReturnValue({
-      matches: false,
-      media: '(prefers-reduced-motion: reduce)',
-      onchange: null,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-    }),
-  )
+test('moves the active line until command mode opens, then leaves it in place', () => {
   render(<App />)
 
+  expect(document.querySelector('[data-editor-line-id="readme-line-1"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
   fireEvent.keyDown(window, { key: 'j' })
-  expect(scrollBy).toHaveBeenCalledWith({ behavior: 'smooth', top: 72 })
+  expect(document.querySelector('[data-editor-line-id="readme-line-2"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
 
   fireEvent.keyDown(window, { key: ':' })
   expect(screen.getByRole('dialog', { name: 'Portfolio commands' })).toBeVisible()
   fireEvent.keyDown(window, { key: 'j' })
 
-  expect(scrollBy).toHaveBeenCalledOnce()
+  expect(document.querySelector('[data-editor-line-id="readme-line-2"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+})
+
+test('supports active-line boundaries and activation without replacing conventional controls', () => {
+  render(<App />)
+
+  fireEvent.keyDown(window, { key: 'G', shiftKey: true })
+  expect(document.querySelector('[data-editor-line-id="readme-line-9"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+
+  fireEvent.keyDown(window, { key: 'g' })
+  fireEvent.keyDown(window, { key: 'g' })
+  for (let index = 0; index < 5; index += 1) fireEvent.keyDown(window, { key: 'j' })
+  expect(document.querySelector('[data-editor-line-id="readme-line-6"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+
+  fireEvent.keyDown(window, { key: 'Enter' })
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'experience.log')
+  expect(screen.getByRole('button', { name: 'README.md' })).toBeVisible()
+})
+
+test('opens primary buffers by number and cycles only through open buffers', () => {
+  render(<App />)
+
+  fireEvent.keyDown(window, { key: '3' })
+  expect(screen.getByRole('main')).toHaveAttribute(
+    'aria-label',
+    'projects/username-generator-api.md',
+  )
+
+  fireEvent.keyDown(window, { key: 'g' })
+  fireEvent.keyDown(window, { key: 't' })
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'README.md')
+
+  fireEvent.keyDown(window, { key: 'g' })
+  fireEvent.keyDown(window, { key: 'T', shiftKey: true })
+  expect(screen.getByRole('main')).toHaveAttribute(
+    'aria-label',
+    'projects/username-generator-api.md',
+  )
+})
+
+test('reports harmless insert and write-quit easter eggs in the editor status', () => {
+  render(<App />)
+
+  fireEvent.keyDown(window, { key: 'i' })
+  expect(screen.getByRole('status')).toHaveTextContent(/read-only/i)
+
+  fireEvent.keyDown(window, { key: 'Z', shiftKey: true })
+  fireEvent.keyDown(window, { key: 'Z', shiftKey: true })
+  expect(screen.getByRole('status')).toHaveTextContent(/nothing to save/i)
 })
 
 test('restores the disabled preference and leaves every Vim motion untouched', () => {
   const storage = createMemoryStorage()
   storage.setItem(vimShortcutsStorageKey, 'false')
   vi.stubGlobal('localStorage', storage)
-  const scrollBy = vi.spyOn(window, 'scrollBy').mockImplementation(() => undefined)
-  const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
   render(<App />)
 
   expect(screen.getByRole('button', { name: 'Editor keys: off' })).toHaveAttribute(
@@ -372,8 +420,10 @@ test('restores the disabled preference and leaves every Vim motion untouched', (
   expect(fireEvent.keyDown(window, { key: 'g' })).toBe(true)
   expect(fireEvent.keyDown(window, { key: 'g' })).toBe(true)
   expect(fireEvent.keyDown(window, { key: 'G' })).toBe(true)
-  expect(scrollBy).not.toHaveBeenCalled()
-  expect(scrollTo).not.toHaveBeenCalled()
+  expect(document.querySelector('[data-editor-line-id="readme-line-1"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
 
   fireEvent.keyDown(window, { key: ':' })
   expect(screen.getByRole('option', { name: 'Enable Vim scroll shortcuts' })).toBeVisible()
@@ -382,20 +432,6 @@ test('restores the disabled preference and leaves every Vim motion untouched', (
 test('toggles Vim shortcuts from the command palette and persists each update', () => {
   const storage = createMemoryStorage()
   vi.stubGlobal('localStorage', storage)
-  vi.stubGlobal(
-    'matchMedia',
-    vi.fn().mockReturnValue({
-      matches: false,
-      media: '(prefers-reduced-motion: reduce)',
-      onchange: null,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-    }),
-  )
-  const scrollBy = vi.spyOn(window, 'scrollBy').mockImplementation(() => undefined)
   render(<App />)
 
   expect(screen.getByRole('button', { name: 'Editor keys: on' })).toHaveAttribute(
@@ -411,7 +447,10 @@ test('toggles Vim shortcuts from the command palette and persists each update', 
   expect(storage.getItem(vimShortcutsStorageKey)).toBe('false')
   expect(screen.getByRole('button', { name: 'Editor keys: off' })).toBeVisible()
   expect(fireEvent.keyDown(window, { key: 'd', ctrlKey: true })).toBe(true)
-  expect(scrollBy).not.toHaveBeenCalled()
+  expect(document.querySelector('[data-editor-line-id="readme-line-1"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
 
   fireEvent.keyDown(window, { key: ':' })
   input = screen.getByRole('combobox', { name: 'Find a command' })
@@ -422,5 +461,8 @@ test('toggles Vim shortcuts from the command palette and persists each update', 
   expect(storage.getItem(vimShortcutsStorageKey)).toBe('true')
   expect(screen.getByRole('button', { name: 'Editor keys: on' })).toBeVisible()
   expect(fireEvent.keyDown(window, { key: 'j' })).toBe(false)
-  expect(scrollBy).toHaveBeenCalledWith({ behavior: 'smooth', top: 72 })
+  expect(document.querySelector('[data-editor-line-id="readme-line-2"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
 })

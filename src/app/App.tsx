@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { CommandPalette } from '../components/command/CommandPalette'
-import { useVimScrollMotions } from '../components/keyboard/useVimScrollMotions'
 import { useVimShortcutsPreference } from '../components/keyboard/useVimShortcutsPreference'
 import { portfolioData } from '../data/portfolio'
 import type { Command } from '../data/types'
@@ -9,6 +8,8 @@ import type { BufferId } from '../editor/buffers/types'
 import { createDocumentLines } from '../editor/document/createDocumentLines'
 import { DocumentBuffer } from '../editor/document/DocumentBuffer'
 import type { DocumentActions } from '../editor/document/types'
+import { useActiveLineController } from '../editor/keyboard/useActiveLineController'
+import { useVimInterpreter, type VimEasterEgg } from '../editor/keyboard/useVimInterpreter'
 import { useBufferNavigation } from '../editor/navigation/useBufferNavigation'
 import { EditorWorkspace } from '../editor/workspace/EditorWorkspace'
 
@@ -36,10 +37,10 @@ function openLink(href: string) {
 
 export function App() {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
+  const [vimStatusMessage, setVimStatusMessage] = useState<string | null>(null)
   const { enabled: vimShortcutsEnabled, toggle: toggleVimShortcuts } =
     useVimShortcutsPreference()
   const navigation = useBufferNavigation(registry)
-  useVimScrollMotions({ disabled: isCommandPaletteOpen || !vimShortcutsEnabled })
 
   const documentActions: DocumentActions = {
     openBuffer: navigation.openBuffer,
@@ -47,6 +48,34 @@ export function App() {
     downloadResume,
   }
   const lines = createDocumentLines(navigation.activeBuffer, portfolioData, documentActions)
+  const activeLine = useActiveLineController({
+    bufferId: navigation.activeId,
+    lines,
+  })
+
+  const reportEasterEgg = (command: VimEasterEgg) => {
+    setVimStatusMessage(
+      command === 'i'
+        ? 'read-only portfolio: insert mode is unavailable'
+        : 'nothing to save: this portfolio is already up to date',
+    )
+  }
+
+  useVimInterpreter({
+    vimEnabled: vimShortcutsEnabled,
+    isCommandOpen: isCommandPaletteOpen,
+    isSearchOpen: false,
+    moveLines: activeLine.moveLines,
+    moveHalfPage: activeLine.moveHalfPage,
+    moveBoundary: activeLine.moveBoundary,
+    activateLine: activeLine.activateLine,
+    cycleBuffer: navigation.cycleBuffer,
+    openPrimaryBuffer: (position) => {
+      const id = registry.primaryIds[position - 1]
+      if (id) navigation.openBuffer(id)
+    },
+    onEasterEgg: reportEasterEgg,
+  })
 
   const commands: Command[] = [
     ...portfolioData.commandSections.map(({ id, keywords, label }) => ({
@@ -97,9 +126,13 @@ export function App() {
         onCycleBuffer={navigation.cycleBuffer}
         vimEnabled={vimShortcutsEnabled}
         onToggleVim={toggleVimShortcuts}
-        statusMessage={navigation.statusMessage}
+        statusMessage={vimStatusMessage ?? navigation.statusMessage}
       >
-        <DocumentBuffer buffer={navigation.activeBuffer} lines={lines} />
+        <DocumentBuffer
+          buffer={navigation.activeBuffer}
+          lines={lines}
+          activeIndex={activeLine.activeIndex}
+        />
       </EditorWorkspace>
       <CommandPalette commands={commands} onOpenChange={setIsCommandPaletteOpen} />
     </>

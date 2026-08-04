@@ -60,6 +60,14 @@ test('provides semantic file navigation and identifies the current file', () => 
   const activeBuffer = registry.byId.get(projectId)!
 
   expect(within(explorer).getByText('Explorer')).toBeVisible()
+  expect(within(explorer).getByText('projects/')).toBeVisible()
+  const projects = within(explorer).getByRole('list', { name: 'projects folder' })
+  expect(within(projects).getAllByRole('listitem')).toHaveLength(portfolioData.projects.length)
+  portfolioData.projects.forEach(({ id }) => {
+    expect(
+      within(projects).getByRole('button', { name: `projects/${id}.md` }),
+    ).toBeVisible()
+  })
   expect(within(explorer).getByRole('button', { name: activeBuffer.path })).toHaveAttribute(
     'aria-current',
     'page',

@@ -1,4 +1,4 @@
-import type { BufferId, BufferRegistry } from '../buffers/types'
+import type { BufferDefinition, BufferId, BufferRegistry } from '../buffers/types'
 
 type ExplorerProps = {
   registry: BufferRegistry
@@ -19,6 +19,29 @@ export function Explorer({
   className = '',
   hiddenFromAccessibility = false,
 }: ExplorerProps) {
+  const buffers = Array.from(registry.byId.values())
+  const projectBuffers = buffers.filter((buffer) => buffer.path.includes('/'))
+  const firstProjectIndex = buffers.findIndex((buffer) => buffer.path.includes('/'))
+
+  const renderBufferButton = (buffer: BufferDefinition, nested = false) => {
+    const isActive = buffer.id === activeId
+
+    return (
+      <button
+        className={`editor-explorer__file${nested ? ' editor-explorer__file--nested' : ''}`}
+        type="button"
+        aria-label={buffer.path}
+        aria-current={isActive ? 'page' : undefined}
+        onClick={() => onOpenBuffer(buffer.id)}
+      >
+        <span aria-hidden="true" className="editor-explorer__marker">
+          {isActive ? '›' : ''}
+        </span>
+        {buffer.filename}
+      </button>
+    )
+  }
+
   return (
     <nav
       id="portfolio-explorer"
@@ -28,27 +51,29 @@ export function Explorer({
       inert={hiddenFromAccessibility ? true : undefined}
     >
       <div className="editor-explorer__heading">Explorer</div>
-      <div className="editor-explorer__files">
-        {Array.from(registry.byId.values()).map((buffer) => {
-          const isActive = buffer.id === activeId
+      <ul className="editor-explorer__files" aria-label="Portfolio files">
+        {buffers.map((buffer, index) => {
+          if (!buffer.path.includes('/')) {
+            return <li key={buffer.id}>{renderBufferButton(buffer)}</li>
+          }
+
+          if (index !== firstProjectIndex) return null
 
           return (
-            <button
-              key={buffer.id}
-              className={`editor-explorer__file${buffer.path.includes('/') ? ' editor-explorer__file--nested' : ''}`}
-              type="button"
-              aria-label={buffer.path}
-              aria-current={isActive ? 'page' : undefined}
-              onClick={() => onOpenBuffer(buffer.id)}
-            >
-              <span aria-hidden="true" className="editor-explorer__marker">
-                {isActive ? '›' : ''}
-              </span>
-              {buffer.filename}
-            </button>
+            <li key="projects" className="editor-explorer__folder">
+              <div className="editor-explorer__folder-label">
+                <span aria-hidden="true" className="editor-explorer__folder-marker">▾</span>
+                <span>projects/</span>
+              </div>
+              <ul className="editor-explorer__folder-files" aria-label="projects folder">
+                {projectBuffers.map((projectBuffer) => (
+                  <li key={projectBuffer.id}>{renderBufferButton(projectBuffer, true)}</li>
+                ))}
+              </ul>
+            </li>
           )
         })}
-      </div>
+      </ul>
       <div className="editor-explorer__settings">
         <button
           className="editor-vim-toggle"

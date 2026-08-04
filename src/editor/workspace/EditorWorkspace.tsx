@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { MouseEvent, ReactNode } from 'react'
 import type { BufferId, BufferRegistry } from '../buffers/types'
 import { getDocumentHeadingId } from '../document/documentIds'
 import { EditorStatus } from './EditorStatus'
@@ -50,9 +50,18 @@ export function EditorWorkspace({
     onOpenBuffer(id)
   }
 
+  const focusActiveDocument = (event: MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault()
+    document.getElementById(getDocumentHeadingId(activeBuffer.id))?.focus()
+  }
+
   return (
     <div className="editor-workspace">
-      <a className="editor-skip-link" href={`#${getDocumentHeadingId(activeBuffer.id)}`}>
+      <a
+        className="editor-skip-link"
+        href={`#${getDocumentHeadingId(activeBuffer.id)}`}
+        onClick={focusActiveDocument}
+      >
         Skip to content
       </a>
       <EditorTopBar

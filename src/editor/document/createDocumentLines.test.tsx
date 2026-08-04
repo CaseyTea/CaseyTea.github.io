@@ -35,7 +35,11 @@ test('README presents Casey, the role, all impact metrics, and primary actions',
   expect(screen.getByRole('heading', { level: 1, name: portfolioData.name })).toBeVisible()
   expect(screen.getByText(portfolioData.title)).toBeVisible()
 
-  const metrics = screen.getByRole('list', { name: 'Career impact' })
+  const metrics = screen.getByLabelText('Career impact')
+  expect(metrics.tagName).toBe('DL')
+  expect(metrics).not.toHaveAttribute('role')
+  expect(within(metrics).getAllByRole('term')).toHaveLength(portfolioData.metrics.length)
+  expect(within(metrics).getAllByRole('definition')).toHaveLength(portfolioData.metrics.length)
   portfolioData.metrics.forEach(({ label, value }) => {
     expect(within(metrics).getByText(value)).toBeVisible()
     expect(within(metrics).getByText(label)).toBeVisible()

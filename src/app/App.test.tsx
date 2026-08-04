@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { readFileSync } from 'node:fs'
 import { afterEach, beforeEach, vi } from 'vitest'
 import { portfolioData } from '../data/portfolio'
@@ -164,6 +164,22 @@ test('updates skip navigation and politely announces the buffer opened by every 
   expect(screen.getByRole('status')).toHaveTextContent('opened contact.md')
 })
 
+test('activating skip navigation focuses the current document without changing its buffer route', async () => {
+  render(<App />)
+  fireEvent.click(screen.getByRole('button', { name: 'experience.log' }))
+
+  const experienceHeading = screen.getByRole('heading', { level: 1, name: 'Experience' })
+  const skipLink = screen.getByRole('link', { name: 'Skip to content' })
+  skipLink.focus()
+  fireEvent.click(skipLink)
+  await act(async () => new Promise((resolve) => setTimeout(resolve, 0)))
+
+  expect(window.location.hash).toBe('#buffer=experience.log')
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'experience.log')
+  expect(screen.getByRole('status')).toHaveTextContent('opened experience.log')
+  expect(experienceHeading).toHaveFocus()
+})
+
 test('replaces stale editor feedback with the latest navigation announcement', () => {
   render(<App />)
 
@@ -252,7 +268,9 @@ test('falls back from an unknown deep link without leaving stale section navigat
 test('shows all three real career metrics on README', () => {
   render(<App />)
 
-  const metrics = screen.getByRole('list', { name: 'Career impact' })
+  const metrics = screen.getByLabelText('Career impact')
+  expect(metrics.tagName).toBe('DL')
+  expect(metrics).not.toHaveAttribute('role')
   portfolioData.metrics.forEach(({ label, value }) => {
     expect(within(metrics).getByText(value)).toBeVisible()
     expect(within(metrics).getByText(label)).toBeVisible()

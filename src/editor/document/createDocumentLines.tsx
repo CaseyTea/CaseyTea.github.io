@@ -42,7 +42,7 @@ function createReadmeLines(data: PortfolioData, actions: DocumentActions): Docum
   addLine(data.introduction, <p>{data.introduction}</p>)
   addLine(
     data.metrics.flatMap(({ label, value }) => [value, label]).join(' '),
-    <dl className="document-metrics" role="list" aria-label="Career impact">
+    <dl className="document-metrics" aria-label="Career impact">
       {data.metrics.map(({ label, value }) => (
         <div key={label} className="document-metrics__item">
           <dt>{value}</dt>

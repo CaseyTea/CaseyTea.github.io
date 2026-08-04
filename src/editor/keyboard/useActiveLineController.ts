@@ -5,6 +5,7 @@ import type { DocumentLine } from '../document/types'
 type ActiveLineControllerOptions = {
   bufferId: BufferId
   lines: DocumentLine[]
+  resetKey?: number
 }
 
 type CursorState = {
@@ -42,6 +43,7 @@ function getScrollBehavior(): ScrollBehavior {
 export function useActiveLineController({
   bufferId,
   lines,
+  resetKey = 0,
 }: ActiveLineControllerOptions) {
   const linesRef = useRef(lines)
   linesRef.current = lines
@@ -99,11 +101,11 @@ export function useActiveLineController({
 
   useEffect(() => {
     setCursor((currentCursor) =>
-      currentCursor.bufferId === bufferId
+      currentCursor.bufferId === bufferId && currentCursor.index === 0
         ? currentCursor
         : { bufferId, index: 0 },
     )
-  }, [bufferId])
+  }, [bufferId, resetKey])
 
   useEffect(() => {
     if (!activeLineId) return

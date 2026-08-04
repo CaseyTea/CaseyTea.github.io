@@ -1,18 +1,7 @@
 import { useEffect, useRef } from 'react'
+import { isInteractiveShortcutTarget } from './isInteractiveShortcutTarget'
 
 const SEQUENCE_WINDOW_MS = 500
-const INTERACTIVE_SELECTOR = [
-  'input',
-  'textarea',
-  'select',
-  'button',
-  'a',
-  'summary',
-  'audio[controls]',
-  'video[controls]',
-  '[contenteditable]:not([contenteditable="false"])',
-  '[tabindex]:not([tabindex="-1"]):not(#active-buffer)',
-].join(', ')
 
 export type VimEasterEgg = 'ZZ' | 'i'
 
@@ -29,11 +18,6 @@ export type VimInterpreterOptions = {
   onEasterEgg: (command: VimEasterEgg) => void
   onOpenSearch?: () => void
   onOpenCommand?: () => void
-}
-
-function isInteractiveTarget(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false
-  return Boolean(target.closest(INTERACTIVE_SELECTOR))
 }
 
 function isWithinSequence(timestamp: number | null, now: number): boolean {
@@ -58,7 +42,7 @@ export function useVimInterpreter(options: VimInterpreterOptions): void {
     if (unavailable) return
 
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.defaultPrevented || isInteractiveTarget(event.target)) {
+      if (event.defaultPrevented || isInteractiveShortcutTarget(event.target)) {
         clearPending()
         return
       }

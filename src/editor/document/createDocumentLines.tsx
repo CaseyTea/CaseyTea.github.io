@@ -198,6 +198,7 @@ function createAboutLines(data: PortfolioData, actions: DocumentActions): Docume
 
   addLine(`About ${data.name}`, <h1>About {data.name}</h1>)
   addLine(data.introduction, <p>{data.introduction}</p>)
+  data.about.forEach((paragraph) => addLine(paragraph, <p>{paragraph}</p>))
   addLine('Skills and tools', <h2>Skills and tools</h2>)
   data.skillGroups.forEach((group) => {
     addLine(group.title, <h3>{group.title}</h3>)
@@ -223,6 +224,7 @@ function createContactLines(data: PortfolioData, actions: DocumentActions): Docu
   const { addLine, lines } = createLineBuilder('contact')
 
   addLine('Contact', <h1>Contact</h1>)
+  addLine(data.availability, <p>{data.availability}</p>)
   addLine(data.location, <p>{data.location}</p>)
   data.contacts.forEach((contact) => {
     const { href, label } = contact

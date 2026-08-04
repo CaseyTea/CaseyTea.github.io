@@ -158,6 +158,35 @@ test('resets an open search when the active buffer changes', () => {
   expect(setActiveIndex).not.toHaveBeenCalled()
 })
 
+test('resets an open search when the active buffer is reopened', () => {
+  const setActiveIndex = vi.fn()
+  const lines = createLines('Match', 'Other', 'Match again')
+  const { result, rerender } = renderHook(
+    ({ resetKey }) => useBufferSearch({
+      bufferId: 'readme',
+      resetKey,
+      lines,
+      activeIndex: 2,
+      setActiveIndex,
+    }),
+    { initialProps: { resetKey: 0 } },
+  )
+
+  act(() => {
+    result.current.open()
+    result.current.setQuery('match')
+  })
+  setActiveIndex.mockClear()
+
+  rerender({ resetKey: 1 })
+
+  expect(result.current.isOpen).toBe(false)
+  expect(result.current.query).toBe('')
+  expect(result.current.matchIndexes).toEqual([])
+  expect(result.current.currentMatch).toBeNull()
+  expect(setActiveIndex).not.toHaveBeenCalled()
+})
+
 test('closing restores the invoking logical line and focused element', () => {
   const trigger = document.createElement('button')
   document.body.append(trigger)

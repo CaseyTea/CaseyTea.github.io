@@ -99,7 +99,7 @@ test('renders semantic tabs with short labels and accessible full paths', () => 
 })
 
 test('labels the buffer slot and exposes editor status fields', () => {
-  renderWorkspace()
+  renderWorkspace({ activeLineIndex: 2, lineCount: 4, isCommandOpen: true })
   const activeBuffer = registry.byId.get(projectId)!
 
   expect(screen.getByRole('main')).toHaveAttribute('id', 'active-buffer')
@@ -111,11 +111,12 @@ test('labels the buffer slot and exposes editor status fields', () => {
   expect(within(panel).getByText('Buffer content')).toBeVisible()
 
   const status = screen.getByRole('contentinfo', { name: 'Editor status' })
-  expect(within(status).getByText('-- NORMAL --')).toBeVisible()
+  expect(within(status).getByText('-- COMMAND --')).toBeVisible()
   expect(within(status).getByText(activeBuffer.path)).toBeVisible()
+  expect(within(status).getByText(activeBuffer.kind)).toBeVisible()
   expect(within(status).getByText('vim')).toBeVisible()
-  expect(within(status).getByText('1,1')).toBeVisible()
-  expect(within(status).getByText('Top')).toBeVisible()
+  expect(within(status).getByText('3,1')).toBeVisible()
+  expect(within(status).getByText('75%')).toBeVisible()
   expect(within(status).getByRole('status')).toHaveTextContent('project loaded')
 })
 

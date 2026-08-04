@@ -32,6 +32,7 @@ export function useBufferNavigation(registry: BufferRegistry) {
   const [openIds, setOpenIds] = useState<BufferId[]>(() =>
     addOpenId(['readme', 'experience'], initialId),
   )
+  const [openEpoch, setOpenEpoch] = useState(0)
   const [statusMessage, setStatusMessage] = useState<string | null>(() =>
     hasInitialHash && !initialHash.id ? `file not found: ${initialHash.value}` : null,
   )
@@ -43,10 +44,13 @@ export function useBufferNavigation(registry: BufferRegistry) {
   }, [hasInitialHash, initialHash.id])
 
   const activate = useCallback((id: BufferId) => {
+    const buffer = registry.byId.get(id)
+
     setActiveId(id)
     setOpenIds((currentOpenIds) => addOpenId(currentOpenIds, id))
-    setStatusMessage(null)
-  }, [])
+    setOpenEpoch((currentEpoch) => currentEpoch + 1)
+    setStatusMessage(buffer ? `opened ${buffer.path}` : null)
+  }, [registry])
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -57,9 +61,9 @@ export function useBufferNavigation(registry: BufferRegistry) {
         return
       }
 
-      setActiveId(registry.defaultId)
-      setOpenIds((currentOpenIds) => addOpenId(currentOpenIds, registry.defaultId))
+      activate(registry.defaultId)
       setStatusMessage(`file not found: ${parsed.value}`)
+      window.history.replaceState(null, '', window.location.pathname + window.location.search)
     }
 
     window.addEventListener('hashchange', handleHashChange)
@@ -79,26 +83,24 @@ export function useBufferNavigation(registry: BufferRegistry) {
 
   const cycleBuffer = useCallback(
     (direction: 1 | -1) => {
-      setOpenIds((currentOpenIds) => {
-        const currentIndex = currentOpenIds.indexOf(activeId)
-        const nextIndex = (currentIndex + direction + currentOpenIds.length) % currentOpenIds.length
-        const nextId = currentOpenIds[nextIndex]
-        setActiveId(nextId)
-        setStatusMessage(null)
+      const currentIndex = openIds.indexOf(activeId)
+      if (currentIndex < 0 || openIds.length === 0) return
 
-        const buffer = registry.byId.get(nextId)
-        if (buffer) window.location.hash = `buffer=${buffer.filename}`
+      const nextIndex = (currentIndex + direction + openIds.length) % openIds.length
+      const nextId = openIds[nextIndex]
+      const buffer = registry.byId.get(nextId)
 
-        return currentOpenIds
-      })
+      activate(nextId)
+      if (buffer) window.location.hash = `buffer=${buffer.filename}`
     },
-    [activeId, registry],
+    [activate, activeId, openIds, registry],
   )
 
   return {
     activeId,
     activeBuffer: registry.byId.get(activeId) as BufferDefinition,
     openIds,
+    openEpoch,
     statusMessage,
     openBuffer,
     cycleBuffer,

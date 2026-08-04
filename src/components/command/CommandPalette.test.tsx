@@ -101,6 +101,28 @@ test.each([
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 })
 
+test.each([
+  ['button', <button data-testid="interactive-target" key="button" type="button">Action</button>],
+  ['link', <a data-testid="interactive-target" href="#example" key="link">Link</a>],
+  ['summary', <summary data-testid="interactive-target" key="summary">Details</summary>],
+  ['audio control', <audio controls data-testid="interactive-target" key="audio" />],
+  ['video control', <video controls data-testid="interactive-target" key="video" />],
+  ['tab stop', <div data-testid="interactive-target" key="tab-stop" tabIndex={0}>Focusable</div>],
+])('leaves global command shortcuts alone on an interactive %s', (_name, interactiveTarget) => {
+  render(
+    <>
+      {interactiveTarget}
+      <CommandPalette commands={createCommands()} />
+    </>,
+  )
+
+  const target = screen.getByTestId('interactive-target')
+  fireEvent.keyDown(target, { key: ':' })
+  fireEvent.keyDown(target, { key: 'k', ctrlKey: true })
+
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+})
+
 test('filters commands by keywords as the user types', () => {
   render(<CommandPalette commands={createCommands()} />)
   openWithColon()

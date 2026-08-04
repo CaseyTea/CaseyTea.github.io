@@ -5,17 +5,14 @@ export const portfolioData: PortfolioData = {
   title: 'Software Developer',
   introduction:
     'Developer building practical tools, APIs, and experiments—at work and for fun. Interested in teams that enjoy solving meaningful problems and learning together.',
-  avatarUrl: '/assets/my-memoji.png',
+  about: [
+    'I’m Casey. Outside of work, I build and mod mechanical keyboards, spend plenty of time in Neovim using Vim motions, and get together with friends for code jams.',
+    'I have a soft spot for frogs and for learning through playful projects—the kind of small, curious builds that make a new API or tool click. That same curiosity follows me into professional work: understand the real problem, keep the solution practical, and leave the system better than I found it.',
+  ],
+  availability:
+    'I’m interested in software teams that care about useful systems, clear collaboration, and learning while they build.',
   resumeUrl: '/assets/Casey_Franceschy.pdf',
   location: 'Westminster, California',
-  navItems: [
-    { label: 'Overview', href: '#overview' },
-    { label: 'Experience', href: '#experience' },
-    { label: 'Projects', href: '#projects' },
-    { label: 'Skills', href: '#skills' },
-    { label: 'About', href: '#about' },
-    { label: 'Contact', href: '#contact' },
-  ],
   commandSections: [
     {
       id: 'overview',

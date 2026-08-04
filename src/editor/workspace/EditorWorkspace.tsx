@@ -18,6 +18,9 @@ export type EditorWorkspaceProps = {
   onToggleVim: () => void
   statusMessage: string | null
   statusSearch?: ReactNode
+  activeLineIndex?: number
+  lineCount?: number
+  isCommandOpen?: boolean
   children: ReactNode
 }
 
@@ -32,6 +35,9 @@ export function EditorWorkspace({
   onToggleVim,
   statusMessage,
   statusSearch,
+  activeLineIndex = 0,
+  lineCount = 1,
+  isCommandOpen = false,
   children,
 }: EditorWorkspaceProps) {
   const activeBuffer = registry.byId.get(activeId) ?? registry.byId.get(registry.defaultId)
@@ -93,6 +99,9 @@ export function EditorWorkspace({
         vimEnabled={vimEnabled}
         statusMessage={statusMessage}
         search={statusSearch}
+        activeLineIndex={activeLineIndex}
+        lineCount={lineCount}
+        isCommandOpen={isCommandOpen}
       />
     </div>
   )

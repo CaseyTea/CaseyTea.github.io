@@ -59,6 +59,38 @@ test('focuses the selected buffer heading without scrolling and announces line a
   )
 })
 
+test('restores top scroll and heading focus when the current buffer is reopened', () => {
+  const scrollTo = vi.fn()
+  Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+    configurable: true,
+    value: scrollTo,
+  })
+  const { rerender } = render(
+    <>
+      <button type="button">Other control</button>
+      <div id="active-buffer">
+        <DocumentBuffer buffer={readme} lines={lines} navigationEpoch={0} />
+      </div>
+    </>,
+  )
+  const heading = screen.getByRole('heading', { name: 'Casey Franceschy' })
+  scrollTo.mockClear()
+  screen.getByRole('button', { name: 'Other control' }).focus()
+  expect(heading).not.toHaveFocus()
+
+  rerender(
+    <>
+      <button type="button">Other control</button>
+      <div id="active-buffer">
+        <DocumentBuffer buffer={readme} lines={lines} navigationEpoch={1} />
+      </div>
+    </>,
+  )
+
+  expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'auto' })
+  expect(heading).toHaveFocus()
+})
+
 test('the workspace skip link targets the selected buffer heading', () => {
   render(
     <EditorWorkspace

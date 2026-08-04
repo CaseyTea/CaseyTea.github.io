@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useVimShortcutsPreference } from '../components/keyboard/useVimShortcutsPreference'
 import { portfolioData } from '../data/portfolio'
 import type { Command } from '../data/types'
@@ -53,9 +53,11 @@ export function App() {
   const activeLine = useActiveLineController({
     bufferId: navigation.activeId,
     lines,
+    resetKey: navigation.openEpoch,
   })
   const search = useBufferSearch({
     bufferId: navigation.activeId,
+    resetKey: navigation.openEpoch,
     lines,
     activeIndex: activeLine.activeIndex,
     setActiveIndex: activeLine.setActiveIndex,
@@ -67,6 +69,10 @@ export function App() {
       command === 'i' ? 'portfolio is read-only' : 'portfolio already saved',
     )
   }
+
+  useEffect(() => {
+    setEditorStatusMessage(null)
+  }, [navigation.openEpoch])
 
   const setVimShortcuts = (enabled: boolean) => {
     if (enabled !== vimShortcutsEnabled) toggleVimShortcuts()
@@ -104,9 +110,9 @@ export function App() {
       run: downloadResume,
     },
     ...portfolioData.contacts.map(({ href, label }) => ({
-      id: `contact-${label.toLocaleLowerCase()}`,
+      id: `contact-${label.toLowerCase()}`,
       label: `Open ${label}`,
-      keywords: ['contact', label.toLocaleLowerCase()],
+      keywords: ['contact', label.toLowerCase()],
       run: () => openLink(href),
     })),
     {
@@ -139,6 +145,9 @@ export function App() {
         vimEnabled={vimShortcutsEnabled}
         onToggleVim={toggleVimShortcuts}
         statusMessage={editorStatusMessage ?? navigation.statusMessage}
+        activeLineIndex={activeLine.activeIndex}
+        lineCount={lines.length}
+        isCommandOpen={isCommandPaletteOpen}
         statusSearch={search.isOpen ? (
           <BufferSearch
             query={search.query}
@@ -156,6 +165,7 @@ export function App() {
           lines={lines}
           activeIndex={activeLine.activeIndex}
           matchIndexes={search.matchIndexes}
+          navigationEpoch={navigation.openEpoch}
         />
       </EditorWorkspace>
       <EditorCommandMode

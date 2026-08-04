@@ -1,23 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Command } from '../../data/types'
-
-function isEditableTarget(target: EventTarget | null) {
-  if (!(target instanceof HTMLElement)) return false
-
-  return Boolean(
-    target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])'),
-  )
-}
+import { isInteractiveShortcutTarget } from '../../editor/keyboard/isInteractiveShortcutTarget'
 
 export function filterCommands(commands: Command[], query: string) {
-  const normalizedQuery = query.trim().toLocaleLowerCase()
+  const normalizedQuery = query.trim().toLowerCase()
 
   if (!normalizedQuery) return commands
 
   const queryTerms = normalizedQuery.split(/\s+/)
 
   return commands.filter(({ keywords, label }) => {
-    const searchableText = [label, ...keywords].join(' ').toLocaleLowerCase()
+    const searchableText = [label, ...keywords].join(' ').toLowerCase()
     return queryTerms.every((term) => searchableText.includes(term))
   })
 }
@@ -90,12 +83,12 @@ export function useCommandPalette(
     function handleKeyDown(event: KeyboardEvent) {
       if (!isOpen) {
         if (disabled) return
-        if (isEditableTarget(event.target)) return
+        if (isInteractiveShortcutTarget(event.target)) return
 
         const opensWithColon =
           event.key === ':' && !event.altKey && !event.ctrlKey && !event.metaKey
         const opensWithCommandKey =
-          event.key.toLocaleLowerCase() === 'k' &&
+          event.key.toLowerCase() === 'k' &&
           (event.ctrlKey || event.metaKey) &&
           !event.altKey &&
           !event.shiftKey

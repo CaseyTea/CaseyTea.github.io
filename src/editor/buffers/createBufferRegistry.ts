@@ -65,7 +65,7 @@ export function createBufferRegistry(data: PortfolioData): BufferRegistry {
       kind: 'markdown',
       aliases: ['about', 'about.md'],
       title: 'About',
-      searchText: [data.name, data.title, ...data.skillGroups.flatMap(({ skills }) => skills)].join(' '),
+      searchText: [data.name, data.title, ...data.about, ...data.skillGroups.flatMap(({ skills }) => skills)].join(' '),
     },
     {
       id: 'contact',
@@ -74,7 +74,7 @@ export function createBufferRegistry(data: PortfolioData): BufferRegistry {
       kind: 'markdown',
       aliases: ['contact', 'contact.md'],
       title: 'Contact',
-      searchText: [data.location, ...data.contacts.flatMap(({ label, href }) => [label, href])].join(' '),
+      searchText: [data.availability, data.location, ...data.contacts.flatMap(({ label, href }) => [label, href])].join(' '),
     },
   ]
   const primaryIds = contentBuffers.slice(0, 7).map(({ id }) => id)

@@ -22,6 +22,7 @@ type DocumentBufferProps = {
   lines: DocumentLine[]
   activeIndex?: number
   matchIndexes?: number[]
+  navigationEpoch?: number
 }
 
 function renderHeading(
@@ -43,14 +44,16 @@ export function DocumentBuffer({
   lines,
   activeIndex = 0,
   matchIndexes = [],
+  navigationEpoch = 0,
 }: DocumentBufferProps) {
   const headingRef = useRef<HTMLHeadingElement>(null)
   const headingId = getDocumentHeadingId(buffer.id)
   const matches = new Set(matchIndexes)
 
   useEffect(() => {
+    document.getElementById('active-buffer')?.scrollTo?.({ top: 0, behavior: 'auto' })
     headingRef.current?.focus({ preventScroll: true })
-  }, [buffer.id])
+  }, [buffer.id, navigationEpoch])
 
   return (
     <article

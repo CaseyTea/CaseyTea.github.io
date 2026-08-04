@@ -4,6 +4,7 @@ import type { DocumentLine } from '../document/types'
 
 type BufferSearchOptions = {
   bufferId: BufferId
+  resetKey?: number
   lines: DocumentLine[]
   activeIndex: number
   setActiveIndex: (index: number) => void
@@ -11,7 +12,7 @@ type BufferSearchOptions = {
 }
 
 function normalizeQuery(query: string): string {
-  return query.trim().toLocaleLowerCase()
+  return query.trim().toLowerCase()
 }
 
 function findMatchIndexes(lines: DocumentLine[], query: string): number[] {
@@ -20,13 +21,14 @@ function findMatchIndexes(lines: DocumentLine[], query: string): number[] {
   if (!normalizedQuery) return []
 
   return lines.reduce<number[]>((indexes, line, index) => {
-    if (line.searchText.toLocaleLowerCase().includes(normalizedQuery)) indexes.push(index)
+    if (line.searchText.toLowerCase().includes(normalizedQuery)) indexes.push(index)
     return indexes
   }, [])
 }
 
 export function useBufferSearch({
   bufferId,
+  resetKey = 0,
   lines,
   activeIndex,
   setActiveIndex,
@@ -35,7 +37,7 @@ export function useBufferSearch({
   const [isOpen, setIsOpen] = useState(false)
   const [query, updateQuery] = useState('')
   const [currentMatch, setCurrentMatch] = useState<number | null>(null)
-  const previousBufferId = useRef(bufferId)
+  const previousNavigation = useRef({ bufferId, resetKey })
   const invokingActiveIndex = useRef<number | null>(null)
   const invokingFocusedElement = useRef<HTMLElement | null>(null)
   const linesRef = useRef(lines)
@@ -117,9 +119,10 @@ export function useBufferSearch({
   const previous = useCallback(() => moveMatch(-1), [moveMatch])
 
   useEffect(() => {
-    if (previousBufferId.current === bufferId) return
+    const previous = previousNavigation.current
+    if (previous.bufferId === bufferId && previous.resetKey === resetKey) return
 
-    previousBufferId.current = bufferId
+    previousNavigation.current = { bufferId, resetKey }
     invokingActiveIndex.current = null
     invokingFocusedElement.current = null
     updateQuery('')
@@ -128,7 +131,7 @@ export function useBufferSearch({
     currentMatchRef.current = null
     setIsOpen(false)
     onStatusMessage?.(null)
-  }, [bufferId, onStatusMessage])
+  }, [bufferId, onStatusMessage, resetKey])
 
   return {
     isOpen,

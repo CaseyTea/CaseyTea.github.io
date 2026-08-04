@@ -53,16 +53,19 @@ test('falls back to README and reports an invalid initial hash', () => {
 
 test('opens a buffer once and navigates using its filename hash', () => {
   const { result } = renderHook(() => useBufferNavigation(registry))
+  const initialOpenEpoch = result.current.openEpoch
 
   act(() => result.current.openBuffer('contact'))
 
   expect(window.location.hash).toBe('#buffer=contact.md')
   expect(result.current.activeId).toBe('contact')
   expect(result.current.openIds).toEqual(['readme', 'experience', 'contact'])
+  expect(result.current.openEpoch).toBe(initialOpenEpoch + 1)
 
   act(() => result.current.openBuffer('contact'))
 
   expect(result.current.openIds).toEqual(['readme', 'experience', 'contact'])
+  expect(result.current.openEpoch).toBe(initialOpenEpoch + 2)
 })
 
 test('cycles forward and backward only through open buffers', () => {
@@ -75,4 +78,17 @@ test('cycles forward and backward only through open buffers', () => {
   act(() => result.current.cycleBuffer(-1))
   expect(result.current.activeId).toBe('contact')
   expect(result.current.openIds).toEqual(['readme', 'experience', 'contact'])
+})
+
+test('treats a runtime unknown hash as a navigation event back to README', () => {
+  const { result } = renderHook(() => useBufferNavigation(registry))
+  const initialOpenEpoch = result.current.openEpoch
+
+  window.history.replaceState(null, '', '/#buffer=missing.md')
+  act(() => window.dispatchEvent(new HashChangeEvent('hashchange')))
+
+  expect(window.location.hash).toBe('')
+  expect(result.current.activeId).toBe('readme')
+  expect(result.current.statusMessage).toBe('file not found: missing.md')
+  expect(result.current.openEpoch).toBe(initialOpenEpoch + 1)
 })

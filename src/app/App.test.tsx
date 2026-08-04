@@ -145,6 +145,110 @@ test('identifies the active buffer and follows hash changes', () => {
   expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'about.md')
 })
 
+test('updates skip navigation and politely announces the buffer opened by every route', () => {
+  render(<App />)
+
+  fireEvent.click(screen.getByRole('button', { name: 'experience.log' }))
+
+  const experienceHeading = screen.getByRole('heading', { level: 1, name: 'Experience' })
+  expect(screen.getByRole('link', { name: /skip to content/i })).toHaveAttribute(
+    'href',
+    `#${experienceHeading.id}`,
+  )
+  expect(screen.getByRole('status')).toHaveTextContent('opened experience.log')
+
+  window.history.replaceState(null, '', '/#buffer=contact.md')
+  fireEvent(window, new HashChangeEvent('hashchange'))
+
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'contact.md')
+  expect(screen.getByRole('status')).toHaveTextContent('opened contact.md')
+})
+
+test('replaces stale editor feedback with the latest navigation announcement', () => {
+  render(<App />)
+
+  fireEvent.keyDown(window, { key: 'i' })
+  expect(screen.getByRole('status')).toHaveTextContent('portfolio is read-only')
+
+  fireEvent.click(screen.getByRole('button', { name: 'README.md' }))
+
+  expect(screen.getByRole('status')).toHaveTextContent('opened README.md')
+})
+
+test('reopening the active buffer returns its cursor and focus to the top', () => {
+  render(<App />)
+
+  fireEvent.keyDown(window, { key: 'j' })
+  fireEvent.keyDown(window, { key: 'j' })
+  expect(document.querySelector('[data-editor-line-id="readme-line-3"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+
+  fireEvent.click(screen.getByRole('button', { name: 'README.md' }))
+
+  expect(document.querySelector('[data-editor-line-id="readme-line-1"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+  expect(screen.getByRole('heading', { level: 1, name: portfolioData.name })).toHaveFocus()
+})
+
+test('reopening the active buffer closes search instead of preserving stale matches', () => {
+  render(<App />)
+
+  fireEvent.keyDown(window, { key: '/' })
+  fireEvent.change(screen.getByRole('searchbox', { name: 'Search current buffer' }), {
+    target: { value: 'experience' },
+  })
+  expect(document.querySelector('[data-editor-line-id="readme-line-6"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+
+  fireEvent.click(screen.getByRole('button', { name: 'README.md' }))
+
+  expect(screen.queryByRole('searchbox', { name: 'Search current buffer' })).not.toBeInTheDocument()
+  expect(document.querySelector('[data-editor-line-id="readme-line-1"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+  expect(screen.getByRole('heading', { level: 1, name: portfolioData.name })).toHaveFocus()
+  expect(screen.getByRole('status')).toHaveTextContent('opened README.md')
+})
+
+test('a runtime unknown hash resets README and exposes its file-not-found status', () => {
+  render(<App />)
+
+  fireEvent.keyDown(window, { key: 'j' })
+  fireEvent.keyDown(window, { key: 'i' })
+  expect(screen.getByRole('status')).toHaveTextContent('portfolio is read-only')
+
+  window.history.replaceState(null, '', '/#buffer=missing.md')
+  fireEvent(window, new HashChangeEvent('hashchange'))
+
+  expect(window.location.hash).toBe('')
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'README.md')
+  expect(screen.getByRole('status')).toHaveTextContent('file not found: missing.md')
+  expect(document.querySelector('[data-editor-line-id="readme-line-1"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+  expect(screen.getByRole('heading', { level: 1, name: portfolioData.name })).toHaveFocus()
+})
+
+test('falls back from an unknown deep link without leaving stale section navigation', () => {
+  window.history.replaceState(null, '', '/#buffer=missing.md')
+
+  render(<App />)
+
+  expect(window.location.hash).toBe('')
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'README.md')
+  expect(screen.getByRole('status')).toHaveTextContent('file not found: missing.md')
+  expect(screen.queryByRole('navigation', { name: 'Portfolio sections' })).not.toBeInTheDocument()
+  expect(document.querySelector('.section-anchor')).not.toBeInTheDocument()
+})
+
 test('shows all three real career metrics on README', () => {
   render(<App />)
 
@@ -175,6 +279,8 @@ test('renders evidence-backed skill groups in the About buffer without ratings',
   })
   expect(within(about).queryByRole('progressbar')).not.toBeInTheDocument()
   expect(about.querySelector('meter')).not.toBeInTheDocument()
+  expect(within(about).getByText(/mechanical keyboards.*Neovim.*code jams/i)).toBeVisible()
+  expect(within(about).getByText(/soft spot for frogs/i)).toBeVisible()
 })
 
 test('provides contact channels, verified location, and no contact form', () => {
@@ -186,6 +292,9 @@ test('provides contact channels, verified location, and no contact form', () => 
     expect(within(contact).getByRole('link', { name: label })).toHaveAttribute('href', href),
   )
   expect(within(contact).getByText(portfolioData.location)).toBeVisible()
+  expect(
+    within(contact).getByText(/software teams that care about useful systems/i),
+  ).toBeVisible()
   expect(contact.querySelector('form')).not.toBeInTheDocument()
 })
 
@@ -251,6 +360,30 @@ test('runs destination commands by aligning the hash, current file, and heading 
   )
   expect(screen.getByRole('heading', { name: 'Username Generator API' })).toHaveFocus()
   expect(focus).toHaveBeenCalledWith({ preventScroll: true })
+})
+
+test('converges explorer, tab, command, and numeric navigation on shared buffer state', () => {
+  render(<App />)
+
+  fireEvent.click(screen.getByRole('button', { name: 'contact.md' }))
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'contact.md')
+  expect(screen.getByRole('tab', { name: 'Open contact.md' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  )
+
+  fireEvent.click(screen.getByRole('tab', { name: 'Open README.md' }))
+  fireEvent.keyDown(window, { key: ':' })
+  const input = screen.getByRole('combobox', { name: 'Find a command' })
+  fireEvent.change(input, { target: { value: ':e contact.md' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+  expect(window.location.hash).toBe('#buffer=contact.md')
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'contact.md')
+
+  fireEvent.click(screen.getByRole('tab', { name: 'Open README.md' }))
+  fireEvent.keyDown(window, { key: '7' })
+  expect(window.location.hash).toBe('#buffer=contact.md')
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'contact.md')
 })
 
 test('opens buffer aliases typed as editor commands and transfers heading focus', () => {
@@ -328,6 +461,39 @@ test('triggers the existing resume download from its command', () => {
   expect(click).toHaveBeenCalledOnce()
 })
 
+test('invokes the semantic Resume action from the active document line', () => {
+  const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
+  render(<App />)
+
+  fireEvent.click(screen.getByRole('button', { name: 'contact.md' }))
+  fireEvent.keyDown(window, { key: 'G', shiftKey: true })
+  expect(document.querySelector('[data-editor-action="Download resume"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+  fireEvent.keyDown(window, { key: 'Enter' })
+
+  expect(click).toHaveBeenCalledOnce()
+})
+
+test.each([
+  ['projects/guess-that-ascii-mon.md', 'Open live project', portfolioData.projects[1].demoUrl],
+  ['projects/mockbot.md', 'Open project source', portfolioData.projects[2].sourceUrl],
+] as const)('invokes the %s external document action from the active line', (path, label, href) => {
+  const open = vi.spyOn(window, 'open').mockImplementation(() => null)
+  render(<App />)
+
+  fireEvent.click(screen.getByRole('button', { name: path }))
+  fireEvent.keyDown(window, { key: 'G', shiftKey: true })
+  expect(document.querySelector(`[data-editor-action="${label}"]`)).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+  fireEvent.keyDown(window, { key: 'Enter' })
+
+  expect(open).toHaveBeenCalledWith(href, '_blank', 'noopener,noreferrer')
+})
+
 test('opens external contact destinations from commands', () => {
   const open = vi.spyOn(window, 'open').mockImplementation(() => null)
   render(<App />)
@@ -342,6 +508,20 @@ test('opens external contact destinations from commands', () => {
     '_blank',
     'noopener,noreferrer',
   )
+})
+
+test('keeps command search case-insensitive in locales with distinct dotted-I casing', () => {
+  const localeLowerCase = String.prototype.toLocaleLowerCase
+  vi.spyOn(String.prototype, 'toLocaleLowerCase').mockImplementation(function (this: string) {
+    return localeLowerCase.call(this, 'tr-TR')
+  })
+  render(<App />)
+
+  fireEvent.keyDown(window, { key: ':' })
+  const input = screen.getByRole('combobox', { name: 'Find a command' })
+  fireEvent.change(input, { target: { value: 'contact linkedin' } })
+
+  expect(screen.getByRole('option', { name: 'Open LinkedIn' })).toBeVisible()
 })
 
 test('provides shortcut help through both conventional and command controls', () => {
@@ -360,6 +540,24 @@ test('provides shortcut help through both conventional and command controls', ()
   expect(alert).toHaveBeenCalledWith(
     'Open commands with : or Command/Ctrl+K. Vim scroll shortcuts are enabled and can be disabled from this command palette. Scroll with j/k, Ctrl+d/Ctrl+u, gg (top), and G (bottom). Use the arrow keys to choose, Enter to run, and Escape to close.',
   )
+})
+
+test.each([
+  ['1', 'README.md'],
+  ['2', 'experience.log'],
+  ['3', 'projects/username-generator-api.md'],
+  ['4', 'projects/guess-that-ascii-mon.md'],
+  ['5', 'projects/mockbot.md'],
+  ['6', 'about.md'],
+  ['7', 'contact.md'],
+] as const)('keeps Help mapping %s aligned with the real %s buffer', (key, path) => {
+  render(<App />)
+
+  fireEvent.click(screen.getByRole('button', { name: 'Keyboard shortcuts' }))
+  expect(screen.getByRole('button', { name: `${key} ${path}` })).toBeVisible()
+  fireEvent.keyDown(window, { key })
+
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', path)
 })
 
 test('moves the active line until command mode opens, then leaves it in place', () => {
@@ -553,6 +751,23 @@ test('searches the active buffer, suspends Vim motions, and restores its invokin
     'true',
   )
   expect(screen.getByRole('heading', { level: 1, name: portfolioData.name })).toHaveFocus()
+})
+
+test('keeps buffer search case-insensitive in locales with distinct dotted-I casing', () => {
+  const localeLowerCase = String.prototype.toLocaleLowerCase
+  vi.spyOn(String.prototype, 'toLocaleLowerCase').mockImplementation(function (this: string) {
+    return localeLowerCase.call(this, 'tr-TR')
+  })
+  render(<App />)
+
+  fireEvent.click(screen.getByRole('button', { name: 'projects/username-generator-api.md' }))
+  fireEvent.keyDown(window, { key: '/' })
+  const input = screen.getByRole('searchbox', { name: 'Search current buffer' })
+  fireEvent.change(input, { target: { value: 'api' } })
+
+  expect(document.querySelector('[data-editor-line-id="project-username-generator-api-line-1"]'))
+    .toHaveClass('document-line--search-match')
+  expect(screen.getByText(/^[1-9] of [1-9] matches$/)).toBeVisible()
 })
 
 test('keeps command and search modes separate while suppressing Vim input', () => {

@@ -62,6 +62,7 @@ test('focuses the selected buffer heading without scrolling and announces line a
 test('the workspace skip link targets the selected buffer heading', () => {
   render(
     <EditorWorkspace
+      portfolioData={portfolioData}
       registry={registry}
       activeId="readme"
       openIds={['readme', 'experience']}

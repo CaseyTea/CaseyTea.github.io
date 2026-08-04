@@ -15,6 +15,7 @@ function renderWorkspace(overrides: Partial<React.ComponentProps<typeof EditorWo
 
   render(
     <EditorWorkspace
+      portfolioData={portfolioData}
       registry={registry}
       activeId={projectId}
       openIds={['readme', projectId]}
@@ -33,14 +34,20 @@ function renderWorkspace(overrides: Partial<React.ComponentProps<typeof EditorWo
 }
 
 test('renders the editor identity and visitor controls', () => {
-  const { onOpenBuffer } = renderWorkspace()
+  const providedPortfolio = {
+    ...portfolioData,
+    name: 'Provided Portfolio Owner',
+    title: 'Provided Portfolio Role',
+    resumeUrl: '/provided-portfolio-resume.pdf',
+  }
+  const { onOpenBuffer } = renderWorkspace({ portfolioData: providedPortfolio })
 
   const banner = screen.getByRole('banner')
-  expect(within(banner).getByText('Casey Franceschy')).toBeVisible()
-  expect(within(banner).getByText('Software Developer')).toBeVisible()
+  expect(within(banner).getByText(providedPortfolio.name)).toBeVisible()
+  expect(within(banner).getByText(providedPortfolio.title)).toBeVisible()
   expect(within(banner).getByRole('link', { name: 'Download resume' })).toHaveAttribute(
     'href',
-    '/assets/Casey_Franceschy.pdf',
+    providedPortfolio.resumeUrl,
   )
 
   fireEvent.click(within(banner).getByRole('button', { name: 'Keyboard shortcuts' }))

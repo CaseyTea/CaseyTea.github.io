@@ -1,9 +1,12 @@
 import type { RefObject } from 'react'
-import { portfolioData } from '../../data/portfolio'
+import type { PortfolioData } from '../../data/types'
 import type { BufferId, BufferRegistry } from '../buffers/types'
 import { TabStrip } from './TabStrip'
 
+export type EditorPortfolioIdentity = Pick<PortfolioData, 'name' | 'title' | 'resumeUrl'>
+
 type EditorTopBarProps = {
+  portfolioData: EditorPortfolioIdentity
   registry: BufferRegistry
   activeId: BufferId
   openIds: BufferId[]
@@ -15,6 +18,7 @@ type EditorTopBarProps = {
 }
 
 export function EditorTopBar({
+  portfolioData,
   registry,
   activeId,
   openIds,
@@ -27,8 +31,8 @@ export function EditorTopBar({
   return (
     <header className="editor-top-bar">
       <div className="editor-identity">
-        <span className="editor-identity__name">Casey Franceschy</span>
-        <span className="editor-identity__role">Software Developer</span>
+        <span className="editor-identity__name">{portfolioData.name}</span>
+        <span className="editor-identity__role">{portfolioData.title}</span>
       </div>
       <button
         ref={filesButtonRef}

@@ -44,6 +44,7 @@ function renderWorkspace() {
 
   render(
     <EditorWorkspace
+      portfolioData={portfolioData}
       registry={registry}
       activeId="readme"
       openIds={['readme', 'experience']}

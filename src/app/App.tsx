@@ -89,6 +89,7 @@ export function App() {
   return (
     <>
       <EditorWorkspace
+        portfolioData={portfolioData}
         registry={registry}
         activeId={navigation.activeId}
         openIds={navigation.openIds}

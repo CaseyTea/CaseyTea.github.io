@@ -2,12 +2,13 @@ import type { ReactNode } from 'react'
 import type { BufferId, BufferRegistry } from '../buffers/types'
 import { getDocumentHeadingId } from '../document/documentIds'
 import { EditorStatus } from './EditorStatus'
-import { EditorTopBar } from './EditorTopBar'
+import { EditorTopBar, type EditorPortfolioIdentity } from './EditorTopBar'
 import { Explorer } from './Explorer'
 import { activeBufferPanelId, getBufferTabId } from './tabSemantics'
 import { useMobileExplorer } from './useMobileExplorer'
 
 export type EditorWorkspaceProps = {
+  portfolioData: EditorPortfolioIdentity
   registry: BufferRegistry
   activeId: BufferId
   openIds: BufferId[]
@@ -20,6 +21,7 @@ export type EditorWorkspaceProps = {
 }
 
 export function EditorWorkspace({
+  portfolioData,
   registry,
   activeId,
   openIds,
@@ -46,6 +48,7 @@ export function EditorWorkspace({
         Skip to content
       </a>
       <EditorTopBar
+        portfolioData={portfolioData}
         registry={registry}
         activeId={activeId}
         openIds={openIds}

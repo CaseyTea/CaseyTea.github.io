@@ -4,7 +4,7 @@ import { createBufferRegistry } from './createBufferRegistry'
 describe('createBufferRegistry', () => {
   const registry = createBufferRegistry(portfolioData)
 
-  test('creates the complete deterministic primary buffer set from portfolio data', () => {
+  test('creates seven keyboard-addressable buffers in deterministic order', () => {
     expect(registry.defaultId).toBe('readme')
     expect(registry.primaryIds).toEqual([
       'readme',
@@ -14,10 +14,12 @@ describe('createBufferRegistry', () => {
       'project-mockbot',
       'about',
       'contact',
-      'help',
     ])
     expect(registry.byId.get('project-guess-that-ascii-mon')?.filename).toBe(
       'guess-that-ascii-mon.md',
+    )
+    expect(registry.byId.get('help')?.searchText).toContain(
+      '1 README.md 2 experience.log 3 username-generator-api.md 4 guess-that-ascii-mon.md 5 mockbot.md 6 about.md 7 contact.md',
     )
   })
 

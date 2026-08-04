@@ -29,7 +29,7 @@ function createProjectBuffer(project: Project): BufferDefinition {
 }
 
 export function createBufferRegistry(data: PortfolioData): BufferRegistry {
-  const buffers: BufferDefinition[] = [
+  const contentBuffers: BufferDefinition[] = [
     {
       id: 'readme',
       filename: 'README.md',
@@ -76,6 +76,10 @@ export function createBufferRegistry(data: PortfolioData): BufferRegistry {
       title: 'Contact',
       searchText: [data.location, ...data.contacts.flatMap(({ label, href }) => [label, href])].join(' '),
     },
+  ]
+  const primaryIds = contentBuffers.slice(0, 7).map(({ id }) => id)
+  const buffers: BufferDefinition[] = [
+    ...contentBuffers,
     {
       id: 'help',
       filename: 'help.txt',
@@ -83,14 +87,20 @@ export function createBufferRegistry(data: PortfolioData): BufferRegistry {
       kind: 'help',
       aliases: ['help', 'help.txt'],
       title: 'Help',
-      searchText: 'Use keys 1 through 7 to open primary buffers. Use tabs to cycle open buffers.',
+      searchText: [
+        'Use keys 1 through 7 to open primary buffers.',
+        ...contentBuffers
+          .slice(0, 7)
+          .map((buffer, index) => `${index + 1} ${buffer.filename}`),
+        'Use tabs to cycle open buffers.',
+      ].join(' '),
     },
   ]
   const byId = new Map<BufferId, BufferDefinition>(buffers.map((buffer) => [buffer.id, buffer]))
 
   return {
     defaultId: 'readme',
-    primaryIds: buffers.map(({ id }) => id),
+    primaryIds,
     byId,
     resolve(candidate) {
       const normalizedCandidate = normalize(candidate)

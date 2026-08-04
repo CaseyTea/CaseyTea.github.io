@@ -9,8 +9,15 @@ type ParsedBufferHash = {
 export function parseBufferHash(hash: string, registry: BufferRegistry): ParsedBufferHash {
   const rawHash = hash.startsWith('#') ? hash.slice(1) : hash
   const value = rawHash.startsWith('buffer=') ? rawHash.slice('buffer='.length) : rawHash
+  let decodedValue: string
 
-  return { id: registry.resolve(decodeURIComponent(value)), value: decodeURIComponent(value) }
+  try {
+    decodedValue = decodeURIComponent(value)
+  } catch {
+    return { id: null, value }
+  }
+
+  return { id: registry.resolve(decodedValue), value: decodedValue }
 }
 
 function addOpenId(openIds: BufferId[], id: BufferId): BufferId[] {

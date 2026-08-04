@@ -22,6 +22,11 @@ test('parses default and buffer hash forms through the registry', () => {
   })
 })
 
+test('treats a malformed percent-encoded buffer hash as unknown', () => {
+  expect(() => parseBufferHash('#buffer=%E0', registry)).not.toThrow()
+  expect(parseBufferHash('#buffer=%E0', registry)).toEqual({ id: null, value: '%E0' })
+})
+
 test('opens the buffer addressed by the initial hash', () => {
   window.history.replaceState(null, '', '#buffer=experience.log')
 

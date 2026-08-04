@@ -1,5 +1,6 @@
-import type { KeyboardEvent } from 'react'
+import { useRef, type KeyboardEvent } from 'react'
 import type { BufferId, BufferRegistry } from '../buffers/types'
+import { activeBufferPanelId, getBufferTabId } from './tabSemantics'
 
 type TabStripProps = {
   registry: BufferRegistry
@@ -16,11 +17,21 @@ export function TabStrip({
   onOpenBuffer,
   onCycleBuffer,
 }: TabStripProps) {
+  const tabRefs = useRef(new Map<BufferId, HTMLButtonElement>())
+
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
 
     event.preventDefault()
-    onCycleBuffer(event.key === 'ArrowRight' ? 1 : -1)
+    const direction = event.key === 'ArrowRight' ? 1 : -1
+    const navigableIds = openIds.filter((id) => registry.byId.has(id))
+    const currentIndex = navigableIds.indexOf(activeId)
+
+    if (currentIndex < 0 || navigableIds.length === 0) return
+
+    const nextIndex = (currentIndex + direction + navigableIds.length) % navigableIds.length
+    tabRefs.current.get(navigableIds[nextIndex])?.focus()
+    onCycleBuffer(direction)
   }
 
   return (
@@ -39,12 +50,17 @@ export function TabStrip({
         return (
           <button
             key={id}
+            ref={(node) => {
+              if (node) tabRefs.current.set(id, node)
+              else tabRefs.current.delete(id)
+            }}
+            id={getBufferTabId(id)}
             className="editor-tab"
             type="button"
             role="tab"
             aria-label={`Open ${buffer.path}`}
             aria-selected={isActive}
-            aria-controls="active-buffer"
+            aria-controls={activeBufferPanelId}
             tabIndex={isActive ? 0 : -1}
             onClick={() => onOpenBuffer(id)}
           >

@@ -3,6 +3,7 @@ import type { BufferId, BufferRegistry } from '../buffers/types'
 import { EditorStatus } from './EditorStatus'
 import { EditorTopBar } from './EditorTopBar'
 import { Explorer } from './Explorer'
+import { activeBufferPanelId, getBufferTabId } from './tabSemantics'
 import { useMobileExplorer } from './useMobileExplorer'
 
 export type EditorWorkspaceProps = {
@@ -72,7 +73,13 @@ export function EditorWorkspace({
           hiddenFromAccessibility={mobileExplorer.isMobile && !mobileExplorer.isOpen}
         />
         <main id="active-buffer" className="editor-buffer-frame" aria-label={activeBuffer.path}>
-          {children}
+          <div
+            id={activeBufferPanelId}
+            role="tabpanel"
+            aria-labelledby={getBufferTabId(activeBuffer.id)}
+          >
+            {children}
+          </div>
         </main>
       </div>
       <EditorStatus

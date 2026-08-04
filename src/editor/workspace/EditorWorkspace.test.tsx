@@ -80,8 +80,13 @@ test('renders semantic tabs with short labels and accessible full paths', () => 
   fireEvent.click(readmeTab)
   expect(onOpenBuffer).toHaveBeenCalledWith('readme')
 
+  projectTab.focus()
   fireEvent.keyDown(tabs, { key: 'ArrowRight' })
+  expect(readmeTab).toHaveFocus()
+
+  projectTab.focus()
   fireEvent.keyDown(tabs, { key: 'ArrowLeft' })
+  expect(readmeTab).toHaveFocus()
   expect(onCycleBuffer).toHaveBeenNthCalledWith(1, 1)
   expect(onCycleBuffer).toHaveBeenNthCalledWith(2, -1)
 })
@@ -92,7 +97,11 @@ test('labels the buffer slot and exposes editor status fields', () => {
 
   expect(screen.getByRole('main')).toHaveAttribute('id', 'active-buffer')
   expect(screen.getByRole('main')).toHaveAttribute('aria-label', activeBuffer.path)
-  expect(within(screen.getByRole('main')).getByText('Buffer content')).toBeVisible()
+  const panel = within(screen.getByRole('main')).getByRole('tabpanel')
+  const activeTab = screen.getByRole('tab', { name: `Open ${activeBuffer.path}` })
+  expect(activeTab).toHaveAttribute('aria-controls', panel.id)
+  expect(panel).toHaveAttribute('aria-labelledby', activeTab.id)
+  expect(within(panel).getByText('Buffer content')).toBeVisible()
 
   const status = screen.getByRole('contentinfo', { name: 'Editor status' })
   expect(within(status).getByText('-- NORMAL --')).toBeVisible()

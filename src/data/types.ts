@@ -17,6 +17,7 @@ export type Project = {
   outcome: string
   context: string
   contribution: string
+  engineeringNotes?: string[]
   technologies: string[]
   image?: string
   sourceUrl?: string
@@ -26,11 +27,6 @@ export type Project = {
 export type SkillGroup = {
   title: string
   skills: string[]
-}
-
-export type NavItem = {
-  label: string
-  href: string
 }
 
 export type Contact = {
@@ -52,10 +48,10 @@ export type PortfolioData = {
   name: string
   title: string
   introduction: string
-  avatarUrl: string
+  about: string[]
+  availability: string
   resumeUrl: string
   location: string
-  navItems: NavItem[]
   commandSections: CommandDefinition[]
   contacts: Contact[]
   metrics: Metric[]

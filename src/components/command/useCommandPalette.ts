@@ -1,28 +1,33 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Command } from '../../data/types'
-
-function isEditableTarget(target: EventTarget | null) {
-  if (!(target instanceof HTMLElement)) return false
-
-  return Boolean(
-    target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])'),
-  )
-}
+import { isInteractiveShortcutTarget } from '../../editor/keyboard/isInteractiveShortcutTarget'
 
 export function filterCommands(commands: Command[], query: string) {
-  const normalizedQuery = query.trim().toLocaleLowerCase()
+  const normalizedQuery = query.trim().toLowerCase()
 
   if (!normalizedQuery) return commands
 
   const queryTerms = normalizedQuery.split(/\s+/)
 
   return commands.filter(({ keywords, label }) => {
-    const searchableText = [label, ...keywords].join(' ').toLocaleLowerCase()
+    const searchableText = [label, ...keywords].join(' ').toLowerCase()
     return queryTerms.every((term) => searchableText.includes(term))
   })
 }
 
-export function useCommandPalette(commands: Command[]) {
+export type CommandSubmission =
+  | { handled: false }
+  | { handled: true; restoreInvokingFocus?: boolean }
+
+type CommandPaletteOptions = {
+  disabled?: boolean
+  onSubmit?: (query: string, hasActiveCommand: boolean) => CommandSubmission
+}
+
+export function useCommandPalette(
+  commands: Command[],
+  { disabled = false, onSubmit }: CommandPaletteOptions = {},
+) {
   const [isOpen, setIsOpen] = useState(false)
   const [query, updateQuery] = useState('')
   const [activeIndex, setActiveIndex] = useState(0)
@@ -30,10 +35,12 @@ export function useCommandPalette(commands: Command[]) {
   const matchingCommands = useMemo(() => filterCommands(commands, query), [commands, query])
 
   const open = useCallback(() => {
+    if (disabled) return
+
     previouslyFocusedElement.current =
       document.activeElement instanceof HTMLElement ? document.activeElement : null
     setIsOpen(true)
-  }, [])
+  }, [disabled])
 
   const reset = useCallback((restoreFocus: boolean) => {
     setIsOpen(false)
@@ -60,21 +67,28 @@ export function useCommandPalette(commands: Command[]) {
 
   const runActive = useCallback(() => {
     const activeCommand = matchingCommands[activeIndex]
+    const submission = onSubmit?.(query, Boolean(activeCommand))
+
+    if (submission?.handled) {
+      reset(submission.restoreInvokingFocus !== false)
+      return
+    }
 
     if (!activeCommand) return
 
     runCommand(activeCommand)
-  }, [activeIndex, matchingCommands, runCommand])
+  }, [activeIndex, matchingCommands, onSubmit, query, reset, runCommand])
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (!isOpen) {
-        if (isEditableTarget(event.target)) return
+        if (disabled) return
+        if (isInteractiveShortcutTarget(event.target)) return
 
         const opensWithColon =
           event.key === ':' && !event.altKey && !event.ctrlKey && !event.metaKey
         const opensWithCommandKey =
-          event.key.toLocaleLowerCase() === 'k' &&
+          event.key.toLowerCase() === 'k' &&
           (event.ctrlKey || event.metaKey) &&
           !event.altKey &&
           !event.shiftKey
@@ -121,7 +135,7 @@ export function useCommandPalette(commands: Command[]) {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [close, isOpen, matchingCommands.length, open, runActive])
+  }, [close, disabled, isOpen, matchingCommands.length, open, runActive])
 
   return {
     isOpen,

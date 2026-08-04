@@ -1,6 +1,7 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { readFileSync } from 'node:fs'
 import { afterEach, beforeEach, vi } from 'vitest'
+import { portfolioData } from '../data/portfolio'
 import { App } from './App'
 
 const vimShortcutsStorageKey = 'portfolio:vim-scroll-shortcuts-enabled'
@@ -31,6 +32,7 @@ function createMemoryStorage(): Storage {
 }
 
 beforeEach(() => {
+  window.history.replaceState(null, '', '/')
   vi.stubGlobal('localStorage', createMemoryStorage())
 })
 
@@ -39,14 +41,41 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-const sectionLinks = [
-  ['Overview', '#overview'],
-  ['Experience', '#experience'],
-  ['Projects', '#projects'],
-  ['Skills', '#skills'],
-  ['About', '#about'],
-  ['Contact', '#contact'],
-] as const
+test('starts in the README editor buffer with conventional file navigation', () => {
+  render(<App />)
+
+  expect(screen.getByRole('navigation', { name: 'Files' })).toBeVisible()
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'README.md')
+  expect(screen.getByRole('heading', { level: 1, name: 'Casey Franceschy' })).toHaveFocus()
+  expect(screen.getByRole('button', { name: 'experience.log' })).toBeVisible()
+  expect(screen.getByRole('button', { name: 'View experience' })).toBeVisible()
+  expect(screen.queryByRole('navigation', { name: 'Portfolio sections' })).not.toBeInTheDocument()
+})
+
+test('opens a selected portfolio document from the explorer', () => {
+  render(<App />)
+
+  fireEvent.click(screen.getByRole('button', { name: 'experience.log' }))
+
+  expect(window.location.hash).toBe('#buffer=experience.log')
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'experience.log')
+  expect(screen.getByRole('heading', { level: 1, name: 'Experience' })).toHaveFocus()
+  expect(screen.getByRole('heading', { name: 'Quality Engineer (Intern)' })).toBeVisible()
+})
+
+test('opens Experience and Projects from README primary actions', () => {
+  render(<App />)
+
+  fireEvent.click(screen.getByRole('button', { name: 'View experience' }))
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'experience.log')
+
+  fireEvent.click(screen.getByRole('button', { name: 'README.md' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Browse projects' }))
+  expect(screen.getByRole('main')).toHaveAttribute(
+    'aria-label',
+    'projects/username-generator-api.md',
+  )
+})
 
 test('uses plain Resume terminology in visitor-facing app copy and metadata', () => {
   render(<App />)
@@ -58,208 +87,266 @@ test('uses plain Resume terminology in visitor-facing app copy and metadata', ()
   expect(metadata).not.toMatch(/résumé/i)
 })
 
-test('renders Casey’s role and resume link', () => {
+test('renders Casey’s role and semantic resume links', () => {
   render(<App />)
 
-  expect(screen.getByRole('heading', { name: /Casey Franceschy/i })).toBeVisible()
-  expect(
-    within(screen.getByRole('banner')).getByRole('link', { name: /download resume/i }),
-  ).toHaveAttribute('href', '/assets/Casey_Franceschy.pdf')
+  const banner = screen.getByRole('banner')
+  expect(within(banner).getByText(portfolioData.name)).toBeVisible()
+  expect(within(banner).getByText(portfolioData.title)).toBeVisible()
+  expect(within(banner).getByRole('link', { name: 'Download resume' })).toHaveAttribute(
+    'href',
+    portfolioData.resumeUrl,
+  )
+  expect(screen.getAllByRole('link', { name: 'Download resume' })).toHaveLength(2)
 })
 
-test('provides semantic landmarks and accessible portfolio navigation', () => {
-  window.history.replaceState(null, '', '/')
+test('provides editor landmarks, selected-heading skip navigation, and every real buffer', () => {
   render(<App />)
 
+  const heading = screen.getByRole('heading', { level: 1, name: portfolioData.name })
   expect(screen.getByRole('link', { name: /skip to content/i })).toHaveAttribute(
     'href',
-    '#main-content',
+    `#${heading.id}`,
   )
   expect(screen.getByRole('banner')).toBeVisible()
-  expect(screen.getByRole('navigation', { name: 'Portfolio sections' })).toBeVisible()
-  expect(screen.getByRole('main')).toHaveAttribute('id', 'main-content')
-  expect(screen.getByRole('contentinfo')).toBeVisible()
+  expect(screen.getByRole('navigation', { name: 'Files' })).toBeVisible()
+  expect(screen.getByRole('main')).toHaveAttribute('id', 'active-buffer')
+  expect(screen.getByRole('contentinfo', { name: 'Editor status' })).toBeVisible()
 
-  sectionLinks.forEach(([label, href]) => {
-    expect(screen.getByRole('link', { name: label })).toHaveAttribute('href', href)
-    expect(screen.getByRole('link', { name: label })).toBeVisible()
-  })
+  ;[
+    'README.md',
+    'experience.log',
+    'projects/username-generator-api.md',
+    'projects/guess-that-ascii-mon.md',
+    'projects/mockbot.md',
+    'about.md',
+    'contact.md',
+    'help.txt',
+  ].forEach((path) => expect(screen.getByRole('button', { name: path })).toBeVisible())
 })
 
-test('identifies the active section in visible navigation and follows hash changes', () => {
-  window.history.replaceState(null, '', '/')
+test('identifies the active buffer and follows hash changes', () => {
+  window.history.replaceState(null, '', '/#buffer=contact.md')
   render(<App />)
 
-  const overviewLink = screen.getByRole('link', { name: 'Overview' })
-  const skillsLink = screen.getByRole('link', { name: 'Skills' })
+  expect(screen.getByRole('button', { name: 'contact.md' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  )
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'contact.md')
 
-  expect(overviewLink).toHaveAttribute('aria-current', 'location')
-  expect(skillsLink).not.toHaveAttribute('aria-current')
-  expect(screen.getByLabelText('Current section: Overview')).toBeVisible()
-
-  window.history.replaceState(null, '', '/#skills')
+  window.history.replaceState(null, '', '/#buffer=about.md')
   fireEvent(window, new HashChangeEvent('hashchange'))
 
-  expect(overviewLink).not.toHaveAttribute('aria-current')
-  expect(skillsLink).toHaveAttribute('aria-current', 'location')
-  expect(screen.getByLabelText('Current section: Skills')).toBeVisible()
+  expect(screen.getByRole('button', { name: 'about.md' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  )
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'about.md')
 })
 
-test('identifies Casey and labels the professional profile links', () => {
+test('updates skip navigation and politely announces the buffer opened by every route', () => {
   render(<App />)
 
-  expect(screen.getByRole('img', { name: /Casey Franceschy/i })).toHaveAttribute(
-    'src',
-    '/assets/my-memoji.png',
-  )
-  expect(screen.getByRole('link', { name: 'GitHub' })).toHaveAttribute(
+  fireEvent.click(screen.getByRole('button', { name: 'experience.log' }))
+
+  const experienceHeading = screen.getByRole('heading', { level: 1, name: 'Experience' })
+  expect(screen.getByRole('link', { name: /skip to content/i })).toHaveAttribute(
     'href',
-    'https://github.com/CaseyTea',
+    `#${experienceHeading.id}`,
   )
-  expect(screen.getByRole('link', { name: 'LinkedIn' })).toHaveAttribute(
-    'href',
-    'https://www.linkedin.com/in/casey-franceschy-694823124/',
-  )
+  expect(screen.getByRole('status')).toHaveTextContent('opened experience.log')
+
+  window.history.replaceState(null, '', '/#buffer=contact.md')
+  fireEvent(window, new HashChangeEvent('hashchange'))
+
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'contact.md')
+  expect(screen.getByRole('status')).toHaveTextContent('opened contact.md')
 })
 
-test('renders the complete portfolio as six named regions', () => {
+test('activating skip navigation focuses the current document without changing its buffer route', async () => {
+  render(<App />)
+  fireEvent.click(screen.getByRole('button', { name: 'experience.log' }))
+
+  const experienceHeading = screen.getByRole('heading', { level: 1, name: 'Experience' })
+  const skipLink = screen.getByRole('link', { name: 'Skip to content' })
+  skipLink.focus()
+  fireEvent.click(skipLink)
+  await act(async () => new Promise((resolve) => setTimeout(resolve, 0)))
+
+  expect(window.location.hash).toBe('#buffer=experience.log')
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'experience.log')
+  expect(screen.getByRole('status')).toHaveTextContent('opened experience.log')
+  expect(experienceHeading).toHaveFocus()
+})
+
+test('replaces stale editor feedback with the latest navigation announcement', () => {
   render(<App />)
 
-  const sections = [
-    ['overview', /software that makes useful work easier/i],
-    ['experience', /experience/i],
-    ['projects', /selected projects/i],
-    ['skills', /skills/i],
-    ['about', /about me/i],
-    ['contact', /let’s work together/i],
-  ] as const
+  fireEvent.keyDown(window, { key: 'i' })
+  expect(screen.getByRole('status')).toHaveTextContent('portfolio is read-only')
 
-  sections.forEach(([id, name]) => {
-    expect(screen.getByRole('region', { name })).toHaveAttribute('id', id)
+  fireEvent.click(screen.getByRole('button', { name: 'README.md' }))
+
+  expect(screen.getByRole('status')).toHaveTextContent('opened README.md')
+})
+
+test('reopening the active buffer returns its cursor and focus to the top', () => {
+  render(<App />)
+
+  fireEvent.keyDown(window, { key: 'j' })
+  fireEvent.keyDown(window, { key: 'j' })
+  expect(document.querySelector('[data-editor-line-id="readme-line-3"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+
+  fireEvent.click(screen.getByRole('button', { name: 'README.md' }))
+
+  expect(document.querySelector('[data-editor-line-id="readme-line-1"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+  expect(screen.getByRole('heading', { level: 1, name: portfolioData.name })).toHaveFocus()
+})
+
+test('reopening the active buffer closes search instead of preserving stale matches', () => {
+  render(<App />)
+
+  fireEvent.keyDown(window, { key: '/' })
+  fireEvent.change(screen.getByRole('searchbox', { name: 'Search current buffer' }), {
+    target: { value: 'experience' },
+  })
+  expect(document.querySelector('[data-editor-line-id="readme-line-6"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+
+  fireEvent.click(screen.getByRole('button', { name: 'README.md' }))
+
+  expect(screen.queryByRole('searchbox', { name: 'Search current buffer' })).not.toBeInTheDocument()
+  expect(document.querySelector('[data-editor-line-id="readme-line-1"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+  expect(screen.getByRole('heading', { level: 1, name: portfolioData.name })).toHaveFocus()
+  expect(screen.getByRole('status')).toHaveTextContent('opened README.md')
+})
+
+test('a runtime unknown hash resets README and exposes its file-not-found status', () => {
+  render(<App />)
+
+  fireEvent.keyDown(window, { key: 'j' })
+  fireEvent.keyDown(window, { key: 'i' })
+  expect(screen.getByRole('status')).toHaveTextContent('portfolio is read-only')
+
+  window.history.replaceState(null, '', '/#buffer=missing.md')
+  fireEvent(window, new HashChangeEvent('hashchange'))
+
+  expect(window.location.hash).toBe('')
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'README.md')
+  expect(screen.getByRole('status')).toHaveTextContent('file not found: missing.md')
+  expect(document.querySelector('[data-editor-line-id="readme-line-1"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+  expect(screen.getByRole('heading', { level: 1, name: portfolioData.name })).toHaveFocus()
+})
+
+test('falls back from an unknown deep link without leaving stale section navigation', () => {
+  window.history.replaceState(null, '', '/#buffer=missing.md')
+
+  render(<App />)
+
+  expect(window.location.hash).toBe('')
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'README.md')
+  expect(screen.getByRole('status')).toHaveTextContent('file not found: missing.md')
+  expect(screen.queryByRole('navigation', { name: 'Portfolio sections' })).not.toBeInTheDocument()
+  expect(document.querySelector('.section-anchor')).not.toBeInTheDocument()
+})
+
+test('shows all three real career metrics on README', () => {
+  render(<App />)
+
+  const metrics = screen.getByLabelText('Career impact')
+  expect(metrics.tagName).toBe('DL')
+  expect(metrics).not.toHaveAttribute('role')
+  portfolioData.metrics.forEach(({ label, value }) => {
+    expect(within(metrics).getByText(value)).toBeVisible()
+    expect(within(metrics).getByText(label)).toBeVisible()
   })
 })
 
-test('shows three career metrics and keeps professional work before side projects', () => {
+test('points every visible resume action to the PDF asset', () => {
   render(<App />)
 
-  const overview = screen.getByRole('region', { name: /software that makes useful work easier/i })
-  expect(within(overview).getAllByRole('term')).toHaveLength(3)
-
-  const professionalHeading = screen.getByRole('heading', { name: 'Professional work' })
-  const sideProjectHeading = screen.getByRole('heading', { name: 'Side projects' })
-
-  expect(
-    professionalHeading.compareDocumentPosition(sideProjectHeading) & Node.DOCUMENT_POSITION_FOLLOWING,
-  ).toBeTruthy()
-})
-
-test('points every resume action to the PDF asset', () => {
-  render(<App />)
-
-  const resumeActions = screen.getAllByRole('link', { name: /resume/i })
-
-  expect(resumeActions.length).toBeGreaterThan(1)
-  resumeActions.forEach((action) => {
-    expect(action).toHaveAttribute('href', '/assets/Casey_Franceschy.pdf')
+  screen.getAllByRole('link', { name: /download resume/i }).forEach((action) => {
+    expect(action).toHaveAttribute('href', portfolioData.resumeUrl)
+    expect(action).toHaveAttribute('download')
   })
 })
 
-test('keeps personal topics in the About section', () => {
+test('renders evidence-backed skill groups in the About buffer without ratings', () => {
   render(<App />)
+  fireEvent.click(screen.getByRole('button', { name: 'about.md' }))
 
-  const about = screen.getByRole('region', { name: /about me/i })
-  const topics = [
-    /mechanical keyboards/i,
-    /Neovim/i,
-    /Vim motions/i,
-    /code jams/i,
-    /frogs/i,
-    /learning through playful projects/i,
-  ]
-
-  topics.forEach((topic) => expect(within(about).getByText(topic)).toBeVisible())
+  const about = screen.getByRole('article', { name: `About ${portfolioData.name}` })
+  portfolioData.skillGroups.forEach(({ skills, title }) => {
+    expect(within(about).getByRole('heading', { name: title })).toBeVisible()
+    skills.forEach((skill) => expect(within(about).getByText(skill)).toBeVisible())
+  })
+  expect(within(about).queryByRole('progressbar')).not.toBeInTheDocument()
+  expect(about.querySelector('meter')).not.toBeInTheDocument()
+  expect(within(about).getByText(/mechanical keyboards.*Neovim.*code jams/i)).toBeVisible()
+  expect(within(about).getByText(/soft spot for frogs/i)).toBeVisible()
 })
 
 test('provides contact channels, verified location, and no contact form', () => {
   render(<App />)
+  fireEvent.click(screen.getByRole('button', { name: 'contact.md' }))
 
-  const contact = screen.getByRole('region', { name: /let’s work together/i })
-
-  expect(within(contact).getByRole('link', { name: /email/i })).toHaveAttribute(
-    'href',
-    'mailto:casey.franceschy@gmail.com',
+  const contact = screen.getByRole('article', { name: 'Contact' })
+  portfolioData.contacts.forEach(({ href, label }) =>
+    expect(within(contact).getByRole('link', { name: label })).toHaveAttribute('href', href),
   )
-  expect(within(contact).getByRole('link', { name: /github/i })).toHaveAttribute(
-    'href',
-    'https://github.com/CaseyTea',
-  )
-  expect(within(contact).getByRole('link', { name: /linkedin/i })).toHaveAttribute(
-    'href',
-    'https://www.linkedin.com/in/casey-franceschy-694823124/',
-  )
-  expect(within(contact).getByText('Westminster, California')).toBeVisible()
+  expect(within(contact).getByText(portfolioData.location)).toBeVisible()
+  expect(
+    within(contact).getByText(/software teams that care about useful systems/i),
+  ).toBeVisible()
   expect(contact.querySelector('form')).not.toBeInTheDocument()
 })
 
-test('groups evidence-backed skills without ratings or progress bars', () => {
+test('renders project evidence and only links available for each selected project', () => {
   render(<App />)
 
-  const skills = screen.getByRole('region', { name: /^skills$/i })
-
-  expect(within(skills).getByRole('heading', { name: 'Application development' })).toBeVisible()
-  expect(within(skills).getByRole('heading', { name: 'Data and APIs' })).toBeVisible()
-  expect(within(skills).getByRole('heading', { name: 'Cloud and delivery' })).toBeVisible()
-  expect(within(skills).getByText('.NET 8')).toBeVisible()
-  expect(within(skills).getByText('REST APIs')).toBeVisible()
-  expect(within(skills).getByText('Azure DevOps')).toBeVisible()
-  expect(within(skills).queryByRole('progressbar')).not.toBeInTheDocument()
-  expect(skills.querySelector('meter')).not.toBeInTheDocument()
-})
-
-test('renders project evidence and only the links available for each project', () => {
-  render(<App />)
-
-  const usernameGenerator = screen
-    .getByRole('heading', { name: 'Username Generator API' })
-    .closest('article')
-  const asciiMon = screen.getByRole('heading', { name: 'GuessThatAsciiMon' }).closest('article')
-  const mockBot = screen.getByRole('heading', { name: 'MockBot' }).closest('article')
-
-  expect(usernameGenerator).not.toBeNull()
-  expect(within(usernameGenerator!).getByText(/collision-free usernames/i)).toBeVisible()
-  expect(within(usernameGenerator!).getByText(/Modernized a legacy SQL-based/i)).toBeVisible()
-  expect(within(usernameGenerator!).getByText(/Built the \.NET Minimal API/i)).toBeVisible()
-  expect(within(usernameGenerator!).getByRole('img')).toHaveAttribute(
+  fireEvent.click(screen.getByRole('button', { name: 'projects/username-generator-api.md' }))
+  let project = screen.getByRole('article', { name: 'Username Generator API' })
+  expect(within(project).getByText(/collision-free usernames/i)).toBeVisible()
+  expect(within(project).getByRole('img')).toHaveAttribute(
     'src',
     '/assets/projects/project-usernamegen.png',
   )
-  expect(
-    within(
-      within(usernameGenerator!).getByRole('list', {
-        name: 'Username Generator API technologies',
-      }),
-    ).getAllByRole('listitem'),
-  ).toHaveLength(4)
-  expect(within(usernameGenerator!).queryByRole('link')).not.toBeInTheDocument()
+  expect(within(project).queryByRole('link')).not.toBeInTheDocument()
 
-  expect(asciiMon).not.toBeNull()
-  expect(within(asciiMon!).getByRole('link', { name: 'View live project' })).toHaveAttribute(
+  fireEvent.click(screen.getByRole('button', { name: 'projects/guess-that-ascii-mon.md' }))
+  project = screen.getByRole('article', { name: 'GuessThatAsciiMon' })
+  expect(within(project).getByRole('link', { name: 'View live project' })).toHaveAttribute(
     'href',
-    'https://guessthatasciimon-hgdfeafdhqdddef0.canadacentral-01.azurewebsites.net/',
+    portfolioData.projects[1].demoUrl,
   )
-  expect(within(asciiMon!).queryByRole('link', { name: 'View source' })).not.toBeInTheDocument()
+  expect(within(project).queryByRole('link', { name: 'View source' })).not.toBeInTheDocument()
 
-  expect(mockBot).not.toBeNull()
-  expect(within(mockBot!).getByRole('link', { name: 'View source' })).toHaveAttribute(
+  fireEvent.click(screen.getByRole('button', { name: 'projects/mockbot.md' }))
+  project = screen.getByRole('article', { name: 'MockBot' })
+  expect(within(project).getByRole('link', { name: 'View source' })).toHaveAttribute(
     'href',
-    'https://github.com/CaseyTea/Mockbot',
+    portfolioData.projects[2].sourceUrl,
   )
-  expect(within(mockBot!).queryByRole('link', { name: 'View live project' })).not.toBeInTheDocument()
+  expect(within(project).queryByRole('link', { name: 'View live project' })).not.toBeInTheDocument()
 })
 
-test('offers commands for every portfolio section without replacing visible navigation', () => {
+test('offers commands for every portfolio destination alongside file navigation', () => {
   render(<App />)
-
   fireEvent.keyDown(window, { key: ':' })
 
   const options = within(screen.getByRole('listbox', { name: 'Available commands' }))
@@ -272,56 +359,87 @@ test('offers commands for every portfolio section without replacing visible navi
     'Go to contact',
   ].forEach((label) => expect(options.getByRole('option', { name: label })).toBeVisible())
 
-  expect(screen.getByRole('navigation', { name: 'Portfolio sections' })).toBeVisible()
+  expect(screen.getByRole('navigation', { name: 'Files' })).toBeVisible()
 })
 
-test('runs section commands by aligning the hash, active status, and destination focus', () => {
-  window.history.replaceState(null, '', '/')
+test('runs destination commands by aligning the hash, current file, and heading focus', () => {
+  const focus = vi.spyOn(HTMLElement.prototype, 'focus')
   render(<App />)
-
-  const contact = screen.getByRole('region', { name: /let’s work together/i })
-  const offscreenTrigger = within(contact).getByRole('link', { name: /download pdf/i })
-  const projects = screen.getByRole('region', { name: /selected projects/i })
-  const focus = vi.spyOn(projects, 'focus')
-
-  offscreenTrigger.focus()
-  expect(offscreenTrigger).toHaveFocus()
-  fireEvent.keyDown(window, { key: ':' })
-
-  const input = screen.getByRole('combobox', { name: 'Find a command' })
-  fireEvent.change(input, { target: { value: 'projects' } })
-  fireEvent.keyDown(input, { key: 'Enter' })
-
-  expect(window.location.hash).toBe('#projects')
-  expect(projects).toHaveFocus()
-  expect(focus).toHaveBeenCalledWith({ preventScroll: true })
-  expect(offscreenTrigger).not.toHaveFocus()
-})
-
-test('explicitly scrolls an already-current section into view before focusing it', () => {
-  window.history.replaceState(null, '', '/#projects')
-  render(<App />)
-
-  const projects = screen.getByRole('region', { name: /selected projects/i })
-  const scrollIntoView = vi.fn()
-  const focus = vi.spyOn(projects, 'focus')
-  Object.defineProperty(projects, 'scrollIntoView', {
-    configurable: true,
-    value: scrollIntoView,
-  })
 
   fireEvent.keyDown(window, { key: ':' })
   const input = screen.getByRole('combobox', { name: 'Find a command' })
   fireEvent.change(input, { target: { value: 'projects' } })
   fireEvent.keyDown(input, { key: 'Enter' })
 
-  expect(window.location.hash).toBe('#projects')
-  expect(scrollIntoView).toHaveBeenCalledOnce()
-  expect(focus).toHaveBeenCalledWith({ preventScroll: true })
-  expect(scrollIntoView.mock.invocationCallOrder[0]).toBeLessThan(
-    focus.mock.invocationCallOrder[0],
+  expect(window.location.hash).toBe('#buffer=username-generator-api.md')
+  expect(screen.getByRole('main')).toHaveAttribute(
+    'aria-label',
+    'projects/username-generator-api.md',
   )
-  expect(projects).toHaveFocus()
+  expect(screen.getByRole('heading', { name: 'Username Generator API' })).toHaveFocus()
+  expect(focus).toHaveBeenCalledWith({ preventScroll: true })
+})
+
+test('converges explorer, tab, command, and numeric navigation on shared buffer state', () => {
+  render(<App />)
+
+  fireEvent.click(screen.getByRole('button', { name: 'contact.md' }))
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'contact.md')
+  expect(screen.getByRole('tab', { name: 'Open contact.md' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  )
+
+  fireEvent.click(screen.getByRole('tab', { name: 'Open README.md' }))
+  fireEvent.keyDown(window, { key: ':' })
+  const input = screen.getByRole('combobox', { name: 'Find a command' })
+  fireEvent.change(input, { target: { value: ':e contact.md' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+  expect(window.location.hash).toBe('#buffer=contact.md')
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'contact.md')
+
+  fireEvent.click(screen.getByRole('tab', { name: 'Open README.md' }))
+  fireEvent.keyDown(window, { key: '7' })
+  expect(window.location.hash).toBe('#buffer=contact.md')
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'contact.md')
+})
+
+test('opens buffer aliases typed as editor commands and transfers heading focus', () => {
+  render(<App />)
+  fireEvent.keyDown(window, { key: ':' })
+
+  const input = screen.getByRole('combobox', { name: 'Find a command' })
+  fireEvent.change(input, { target: { value: ':e experience.log' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'experience.log')
+  expect(screen.getByRole('heading', { level: 1, name: 'Experience' })).toHaveFocus()
+})
+
+test('opens help through a typed editor command', () => {
+  render(<App />)
+  fireEvent.keyDown(window, { key: ':' })
+
+  const input = screen.getByRole('combobox', { name: 'Find a command' })
+  fireEvent.change(input, { target: { value: ':help' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'help.txt')
+  expect(screen.getByRole('heading', { level: 1, name: 'Help' })).toHaveFocus()
+})
+
+test('keeps the current buffer and reports an invalid typed editor command', () => {
+  render(<App />)
+  fireEvent.keyDown(window, { key: ':' })
+
+  const input = screen.getByRole('combobox', { name: 'Find a command' })
+  fireEvent.change(input, { target: { value: ':make-coffee' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'README.md')
+  expect(screen.getByRole('status')).toHaveTextContent(
+    'not an editor command: make-coffee',
+  )
 })
 
 test.each([
@@ -359,7 +477,39 @@ test('triggers the existing resume download from its command', () => {
   fireEvent.keyDown(input, { key: 'Enter' })
 
   expect(click).toHaveBeenCalledOnce()
-  click.mockRestore()
+})
+
+test('invokes the semantic Resume action from the active document line', () => {
+  const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
+  render(<App />)
+
+  fireEvent.click(screen.getByRole('button', { name: 'contact.md' }))
+  fireEvent.keyDown(window, { key: 'G', shiftKey: true })
+  expect(document.querySelector('[data-editor-action="Download resume"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+  fireEvent.keyDown(window, { key: 'Enter' })
+
+  expect(click).toHaveBeenCalledOnce()
+})
+
+test.each([
+  ['projects/guess-that-ascii-mon.md', 'Open live project', portfolioData.projects[1].demoUrl],
+  ['projects/mockbot.md', 'Open project source', portfolioData.projects[2].sourceUrl],
+] as const)('invokes the %s external document action from the active line', (path, label, href) => {
+  const open = vi.spyOn(window, 'open').mockImplementation(() => null)
+  render(<App />)
+
+  fireEvent.click(screen.getByRole('button', { name: path }))
+  fireEvent.keyDown(window, { key: 'G', shiftKey: true })
+  expect(document.querySelector(`[data-editor-action="${label}"]`)).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+  fireEvent.keyDown(window, { key: 'Enter' })
+
+  expect(open).toHaveBeenCalledWith(href, '_blank', 'noopener,noreferrer')
 })
 
 test('opens external contact destinations from commands', () => {
@@ -372,18 +522,33 @@ test('opens external contact destinations from commands', () => {
   fireEvent.keyDown(input, { key: 'Enter' })
 
   expect(open).toHaveBeenCalledWith(
-    'https://www.linkedin.com/in/casey-franceschy-694823124/',
+    portfolioData.contacts[2].href,
     '_blank',
     'noopener,noreferrer',
   )
-  open.mockRestore()
 })
 
-test('advertises optional shortcuts and provides a shortcut-help command', () => {
+test('keeps command search case-insensitive in locales with distinct dotted-I casing', () => {
+  const localeLowerCase = String.prototype.toLocaleLowerCase
+  vi.spyOn(String.prototype, 'toLocaleLowerCase').mockImplementation(function (this: string) {
+    return localeLowerCase.call(this, 'tr-TR')
+  })
+  render(<App />)
+
+  fireEvent.keyDown(window, { key: ':' })
+  const input = screen.getByRole('combobox', { name: 'Find a command' })
+  fireEvent.change(input, { target: { value: 'contact linkedin' } })
+
+  expect(screen.getByRole('option', { name: 'Open LinkedIn' })).toBeVisible()
+})
+
+test('provides shortcut help through both conventional and command controls', () => {
   const alert = vi.spyOn(window, 'alert').mockImplementation(() => undefined)
   render(<App />)
 
-  expect(screen.getByText('Commands: : or Command/Ctrl+K (optional)')).toBeVisible()
+  fireEvent.click(screen.getByRole('button', { name: 'Keyboard shortcuts' }))
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'help.txt')
+  expect(screen.getByText(/Mouse, touch, Tab, and Enter/i)).toBeVisible()
 
   fireEvent.keyDown(window, { key: ':' })
   const input = screen.getByRole('combobox', { name: 'Find a command' })
@@ -393,45 +558,131 @@ test('advertises optional shortcuts and provides a shortcut-help command', () =>
   expect(alert).toHaveBeenCalledWith(
     'Open commands with : or Command/Ctrl+K. Vim scroll shortcuts are enabled and can be disabled from this command palette. Scroll with j/k, Ctrl+d/Ctrl+u, gg (top), and G (bottom). Use the arrow keys to choose, Enter to run, and Escape to close.',
   )
-  alert.mockRestore()
 })
 
-test('ignores Vim motion keys while command mode is open', () => {
-  const scrollBy = vi.spyOn(window, 'scrollBy').mockImplementation(() => undefined)
-  vi.stubGlobal(
-    'matchMedia',
-    vi.fn().mockReturnValue({
-      matches: false,
-      media: '(prefers-reduced-motion: reduce)',
-      onchange: null,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-    }),
-  )
+test.each([
+  ['1', 'README.md'],
+  ['2', 'experience.log'],
+  ['3', 'projects/username-generator-api.md'],
+  ['4', 'projects/guess-that-ascii-mon.md'],
+  ['5', 'projects/mockbot.md'],
+  ['6', 'about.md'],
+  ['7', 'contact.md'],
+] as const)('keeps Help mapping %s aligned with the real %s buffer', (key, path) => {
   render(<App />)
 
+  fireEvent.click(screen.getByRole('button', { name: 'Keyboard shortcuts' }))
+  expect(screen.getByRole('button', { name: `${key} ${path}` })).toBeVisible()
+  fireEvent.keyDown(window, { key })
+
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', path)
+})
+
+test('moves the active line until command mode opens, then leaves it in place', () => {
+  render(<App />)
+
+  expect(document.querySelector('[data-editor-line-id="readme-line-1"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
   fireEvent.keyDown(window, { key: 'j' })
-  expect(scrollBy).toHaveBeenCalledWith({ behavior: 'smooth', top: 72 })
+  expect(document.querySelector('[data-editor-line-id="readme-line-2"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
 
   fireEvent.keyDown(window, { key: ':' })
   expect(screen.getByRole('dialog', { name: 'Portfolio commands' })).toBeVisible()
   fireEvent.keyDown(window, { key: 'j' })
 
-  expect(scrollBy).toHaveBeenCalledOnce()
+  expect(document.querySelector('[data-editor-line-id="readme-line-2"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+})
+
+test('supports active-line boundaries and activation without replacing conventional controls', () => {
+  render(<App />)
+
+  fireEvent.keyDown(window, { key: 'G', shiftKey: true })
+  expect(document.querySelector('[data-editor-line-id="readme-line-9"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+
+  fireEvent.keyDown(window, { key: 'g' })
+  fireEvent.keyDown(window, { key: 'g' })
+  for (let index = 0; index < 5; index += 1) fireEvent.keyDown(window, { key: 'j' })
+  expect(document.querySelector('[data-editor-line-id="readme-line-6"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+
+  fireEvent.keyDown(window, { key: 'Enter' })
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'experience.log')
+  expect(screen.getByRole('button', { name: 'README.md' })).toBeVisible()
+})
+
+test('opens primary buffers by number and cycles only through open buffers', () => {
+  render(<App />)
+
+  fireEvent.keyDown(window, { key: '3' })
+  expect(screen.getByRole('main')).toHaveAttribute(
+    'aria-label',
+    'projects/username-generator-api.md',
+  )
+
+  fireEvent.keyDown(window, { key: 'g' })
+  fireEvent.keyDown(window, { key: 't' })
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'README.md')
+
+  fireEvent.keyDown(window, { key: 'g' })
+  fireEvent.keyDown(window, { key: 'T', shiftKey: true })
+  expect(screen.getByRole('main')).toHaveAttribute(
+    'aria-label',
+    'projects/username-generator-api.md',
+  )
+})
+
+test('reports harmless insert and write-quit easter eggs in the editor status', () => {
+  render(<App />)
+
+  fireEvent.keyDown(window, { key: 'i' })
+  expect(screen.getByRole('status')).toHaveTextContent('portfolio is read-only')
+
+  fireEvent.keyDown(window, { key: 'Z', shiftKey: true })
+  fireEvent.keyDown(window, { key: 'Z', shiftKey: true })
+  expect(screen.getByRole('status')).toHaveTextContent('portfolio already saved')
+  expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'README.md')
+})
+
+test.each([
+  [':w', 'portfolio already saved'],
+  [':q', "close this tab whenever you're ready"],
+] as const)('reports harmless typed command %s through editor status', (command, message) => {
+  render(<App />)
+  fireEvent.keyDown(window, { key: ':' })
+
+  const input = screen.getByRole('combobox', { name: 'Find a command' })
+  fireEvent.change(input, { target: { value: command } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+
+  expect(screen.getByRole('status')).toHaveTextContent(message)
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'README.md')
 })
 
 test('restores the disabled preference and leaves every Vim motion untouched', () => {
   const storage = createMemoryStorage()
   storage.setItem(vimShortcutsStorageKey, 'false')
   vi.stubGlobal('localStorage', storage)
-  const scrollBy = vi.spyOn(window, 'scrollBy').mockImplementation(() => undefined)
-  const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
   render(<App />)
 
-  expect(screen.getByText('Vim scroll keys: Off')).toBeVisible()
+  expect(screen.getByRole('button', { name: 'Editor keys: off' })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  )
+  expect(screen.getByText('-- READING --')).toBeVisible()
 
   expect(fireEvent.keyDown(window, { key: 'j' })).toBe(true)
   expect(fireEvent.keyDown(window, { key: 'k' })).toBe(true)
@@ -440,8 +691,10 @@ test('restores the disabled preference and leaves every Vim motion untouched', (
   expect(fireEvent.keyDown(window, { key: 'g' })).toBe(true)
   expect(fireEvent.keyDown(window, { key: 'g' })).toBe(true)
   expect(fireEvent.keyDown(window, { key: 'G' })).toBe(true)
-  expect(scrollBy).not.toHaveBeenCalled()
-  expect(scrollTo).not.toHaveBeenCalled()
+  expect(document.querySelector('[data-editor-line-id="readme-line-1"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
 
   fireEvent.keyDown(window, { key: ':' })
   expect(screen.getByRole('option', { name: 'Enable Vim scroll shortcuts' })).toBeVisible()
@@ -450,23 +703,12 @@ test('restores the disabled preference and leaves every Vim motion untouched', (
 test('toggles Vim shortcuts from the command palette and persists each update', () => {
   const storage = createMemoryStorage()
   vi.stubGlobal('localStorage', storage)
-  vi.stubGlobal(
-    'matchMedia',
-    vi.fn().mockReturnValue({
-      matches: false,
-      media: '(prefers-reduced-motion: reduce)',
-      onchange: null,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-    }),
-  )
-  const scrollBy = vi.spyOn(window, 'scrollBy').mockImplementation(() => undefined)
   render(<App />)
 
-  expect(screen.getByText('Vim scroll keys: On')).toHaveAttribute('aria-live', 'polite')
+  expect(screen.getByRole('button', { name: 'Editor keys: on' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
   fireEvent.keyDown(window, { key: ':' })
   let input = screen.getByRole('combobox', { name: 'Find a command' })
   fireEvent.change(input, { target: { value: 'disable vim' } })
@@ -474,9 +716,12 @@ test('toggles Vim shortcuts from the command palette and persists each update', 
   fireEvent.keyDown(input, { key: 'Enter' })
 
   expect(storage.getItem(vimShortcutsStorageKey)).toBe('false')
-  expect(screen.getByText('Vim scroll keys: Off')).toBeVisible()
+  expect(screen.getByRole('button', { name: 'Editor keys: off' })).toBeVisible()
   expect(fireEvent.keyDown(window, { key: 'd', ctrlKey: true })).toBe(true)
-  expect(scrollBy).not.toHaveBeenCalled()
+  expect(document.querySelector('[data-editor-line-id="readme-line-1"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
 
   fireEvent.keyDown(window, { key: ':' })
   input = screen.getByRole('combobox', { name: 'Find a command' })
@@ -485,7 +730,119 @@ test('toggles Vim shortcuts from the command palette and persists each update', 
   fireEvent.keyDown(input, { key: 'Enter' })
 
   expect(storage.getItem(vimShortcutsStorageKey)).toBe('true')
-  expect(screen.getByText('Vim scroll keys: On')).toBeVisible()
+  expect(screen.getByRole('button', { name: 'Editor keys: on' })).toBeVisible()
   expect(fireEvent.keyDown(window, { key: 'j' })).toBe(false)
-  expect(scrollBy).toHaveBeenCalledWith({ behavior: 'smooth', top: 72 })
+  expect(document.querySelector('[data-editor-line-id="readme-line-2"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+})
+
+test('searches the active buffer, suspends Vim motions, and restores its invoking line', () => {
+  render(<App />)
+
+  fireEvent.keyDown(window, { key: 'j' })
+  fireEvent.keyDown(window, { key: 'j' })
+  expect(document.querySelector('[data-editor-line-id="readme-line-3"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+
+  expect(fireEvent.keyDown(window, { key: '/' })).toBe(false)
+  const input = screen.getByRole('searchbox', { name: 'Search current buffer' })
+  expect(input).toHaveFocus()
+  expect(screen.getByText('-- SEARCH --')).toBeVisible()
+
+  fireEvent.change(input, { target: { value: 'experience' } })
+  const match = document.querySelector('[data-editor-line-id="readme-line-6"]')
+  expect(match).toHaveClass('document-line--search-match')
+  expect(match).toHaveAttribute('aria-current', 'true')
+  expect(screen.getByText('1 of 1 matches')).toBeVisible()
+
+  expect(fireEvent.keyDown(window, { key: 'j' })).toBe(true)
+  expect(match).toHaveAttribute('aria-current', 'true')
+
+  fireEvent.keyDown(input, { key: 'Escape' })
+  expect(screen.queryByRole('searchbox', { name: 'Search current buffer' })).not.toBeInTheDocument()
+  expect(document.querySelector('[data-editor-line-id="readme-line-3"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+  expect(screen.getByRole('heading', { level: 1, name: portfolioData.name })).toHaveFocus()
+})
+
+test('keeps buffer search case-insensitive in locales with distinct dotted-I casing', () => {
+  const localeLowerCase = String.prototype.toLocaleLowerCase
+  vi.spyOn(String.prototype, 'toLocaleLowerCase').mockImplementation(function (this: string) {
+    return localeLowerCase.call(this, 'tr-TR')
+  })
+  render(<App />)
+
+  fireEvent.click(screen.getByRole('button', { name: 'projects/username-generator-api.md' }))
+  fireEvent.keyDown(window, { key: '/' })
+  const input = screen.getByRole('searchbox', { name: 'Search current buffer' })
+  fireEvent.change(input, { target: { value: 'api' } })
+
+  expect(document.querySelector('[data-editor-line-id="project-username-generator-api-line-1"]'))
+    .toHaveClass('document-line--search-match')
+  expect(screen.getByText(/^[1-9] of [1-9] matches$/)).toBeVisible()
+})
+
+test('keeps command and search modes separate while suppressing Vim input', () => {
+  const { unmount } = render(<App />)
+
+  fireEvent.keyDown(window, { key: '/' })
+  expect(screen.getByRole('searchbox', { name: 'Search current buffer' })).toHaveFocus()
+  expect(fireEvent.keyDown(window, { key: 'k', ctrlKey: true })).toBe(true)
+  expect(screen.queryByRole('dialog', { name: 'Portfolio commands' })).not.toBeInTheDocument()
+  expect(fireEvent.keyDown(window, { key: 'j' })).toBe(true)
+
+  unmount()
+  render(<App />)
+  fireEvent.keyDown(window, { key: ':' })
+  expect(screen.getByRole('dialog', { name: 'Portfolio commands' })).toBeVisible()
+  expect(fireEvent.keyDown(window, { key: '/' })).toBe(true)
+  expect(screen.queryByRole('searchbox', { name: 'Search current buffer' })).not.toBeInTheDocument()
+})
+
+test('reports a missing buffer pattern without moving the active line', () => {
+  render(<App />)
+  fireEvent.keyDown(window, { key: 'j' })
+
+  fireEvent.keyDown(window, { key: '/' })
+  const input = screen.getByRole('searchbox', { name: 'Search current buffer' })
+  fireEvent.change(input, { target: { value: 'definitely absent' } })
+
+  expect(screen.getByText('0 matches')).toBeVisible()
+  expect(document.querySelector('[data-editor-line-id="readme-line-2"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+
+  fireEvent.keyDown(input, { key: 'Escape' })
+  expect(screen.getByRole('status')).toHaveTextContent(
+    'pattern not found: definitely absent',
+  )
+  expect(document.querySelector('[data-editor-line-id="readme-line-2"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+})
+
+test('resets search when conventional file navigation changes the active buffer', () => {
+  render(<App />)
+
+  fireEvent.keyDown(window, { key: '/' })
+  fireEvent.change(screen.getByRole('searchbox', { name: 'Search current buffer' }), {
+    target: { value: 'casey' },
+  })
+  fireEvent.click(screen.getByRole('button', { name: 'experience.log' }))
+
+  expect(screen.queryByRole('searchbox', { name: 'Search current buffer' })).not.toBeInTheDocument()
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'experience.log')
+  expect(screen.getByRole('heading', { level: 1, name: 'Experience' })).toHaveFocus()
+  expect(document.querySelector('[data-editor-line-id="experience-line-1"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
 })

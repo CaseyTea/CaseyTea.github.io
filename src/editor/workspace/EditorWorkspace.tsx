@@ -1,0 +1,117 @@
+import type { MouseEvent, ReactNode } from 'react'
+import type { BufferId, BufferRegistry } from '../buffers/types'
+import { getDocumentHeadingId } from '../document/documentIds'
+import { EditorStatus } from './EditorStatus'
+import { EditorTopBar, type EditorPortfolioIdentity } from './EditorTopBar'
+import { Explorer } from './Explorer'
+import { activeBufferPanelId, getBufferTabId } from './tabSemantics'
+import { useMobileExplorer } from './useMobileExplorer'
+
+export type EditorWorkspaceProps = {
+  portfolioData: EditorPortfolioIdentity
+  registry: BufferRegistry
+  activeId: BufferId
+  openIds: BufferId[]
+  onOpenBuffer: (id: BufferId) => void
+  onCycleBuffer: (direction: 1 | -1) => void
+  vimEnabled: boolean
+  onToggleVim: () => void
+  statusMessage: string | null
+  statusSearch?: ReactNode
+  activeLineIndex?: number
+  lineCount?: number
+  isCommandOpen?: boolean
+  children: ReactNode
+}
+
+export function EditorWorkspace({
+  portfolioData,
+  registry,
+  activeId,
+  openIds,
+  onOpenBuffer,
+  onCycleBuffer,
+  vimEnabled,
+  onToggleVim,
+  statusMessage,
+  statusSearch,
+  activeLineIndex = 0,
+  lineCount = 1,
+  isCommandOpen = false,
+  children,
+}: EditorWorkspaceProps) {
+  const activeBuffer = registry.byId.get(activeId) ?? registry.byId.get(registry.defaultId)
+  const mobileExplorer = useMobileExplorer()
+
+  if (!activeBuffer) return null
+
+  const openFromExplorer = (id: BufferId) => {
+    mobileExplorer.closeAfterSelection()
+    onOpenBuffer(id)
+  }
+
+  const focusActiveDocument = (event: MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault()
+    document.getElementById(getDocumentHeadingId(activeBuffer.id))?.focus()
+  }
+
+  return (
+    <div className="editor-workspace">
+      <a
+        className="editor-skip-link"
+        href={`#${getDocumentHeadingId(activeBuffer.id)}`}
+        onClick={focusActiveDocument}
+      >
+        Skip to content
+      </a>
+      <EditorTopBar
+        portfolioData={portfolioData}
+        registry={registry}
+        activeId={activeId}
+        openIds={openIds}
+        onOpenBuffer={onOpenBuffer}
+        onCycleBuffer={onCycleBuffer}
+        filesButtonRef={mobileExplorer.openerRef}
+        isExplorerOpen={mobileExplorer.isOpen}
+        onOpenExplorer={mobileExplorer.openExplorer}
+      />
+      <div className="editor-workspace__body">
+        {mobileExplorer.isMobile && mobileExplorer.isOpen ? (
+          <button
+            className="editor-explorer-overlay"
+            type="button"
+            aria-label="Close files"
+            onClick={mobileExplorer.dismissExplorer}
+          />
+        ) : null}
+        <Explorer
+          registry={registry}
+          activeId={activeId}
+          vimEnabled={vimEnabled}
+          onOpenBuffer={openFromExplorer}
+          onToggleVim={onToggleVim}
+          className={mobileExplorer.isOpen ? 'editor-explorer--open' : ''}
+          hiddenFromAccessibility={mobileExplorer.isMobile && !mobileExplorer.isOpen}
+        />
+        <main id="active-buffer" className="editor-buffer-frame" aria-label={activeBuffer.path}>
+          <div
+            id={activeBufferPanelId}
+            role="tabpanel"
+            aria-labelledby={getBufferTabId(activeBuffer.id)}
+          >
+            {children}
+          </div>
+        </main>
+      </div>
+      <EditorStatus
+        activeBuffer={activeBuffer}
+        vimEnabled={vimEnabled}
+        statusMessage={statusMessage}
+        search={statusSearch}
+        activeLineIndex={activeLineIndex}
+        lineCount={lineCount}
+        isCommandOpen={isCommandOpen}
+      />
+    </div>
+  )
+}

@@ -5,17 +5,14 @@ export const portfolioData: PortfolioData = {
   title: 'Software Developer',
   introduction:
     'Developer building practical tools, APIs, and experiments—at work and for fun. Interested in teams that enjoy solving meaningful problems and learning together.',
-  avatarUrl: '/assets/my-memoji.png',
+  about: [
+    'I’m Casey. Outside of work, I build and mod mechanical keyboards, spend plenty of time in Neovim using Vim motions, and get together with friends for code jams.',
+    'I have a soft spot for frogs and for learning through playful projects—the kind of small, curious builds that make a new API or tool click. That same curiosity follows me into professional work: understand the real problem, keep the solution practical, and leave the system better than I found it.',
+  ],
+  availability:
+    'I’m interested in software teams that care about useful systems, clear collaboration, and learning while they build.',
   resumeUrl: '/assets/Casey_Franceschy.pdf',
   location: 'Westminster, California',
-  navItems: [
-    { label: 'Overview', href: '#overview' },
-    { label: 'Experience', href: '#experience' },
-    { label: 'Projects', href: '#projects' },
-    { label: 'Skills', href: '#skills' },
-    { label: 'About', href: '#about' },
-    { label: 'Contact', href: '#contact' },
-  ],
   commandSections: [
     {
       id: 'overview',
@@ -122,6 +119,10 @@ export const portfolioData: PortfolioData = {
       context: 'Modernized a legacy SQL-based username-generation process for Irvine Unified School District.',
       contribution:
         'Built the .NET Minimal API, extended it with support endpoints, and integrated it with HR and internal IT tools.',
+      engineeringNotes: [
+        'Modernized a legacy SQL-based username-generation process.',
+        'Built a .NET Minimal API with support endpoints for HR and internal IT tools.',
+      ],
       technologies: ['.NET', 'Minimal APIs', 'SQL', 'Entity Framework'],
       image: '/assets/projects/project-usernamegen.png',
     },
@@ -132,6 +133,10 @@ export const portfolioData: PortfolioData = {
       outcome: 'A playable retro terminal-style Pokémon guessing game.',
       context: 'Fetches random Pokémon, converts sprites to ASCII art in real time, and gives players type and weight hints.',
       contribution: 'Created the Blazor Server game to practice working with external APIs while building a fun experiment.',
+      engineeringNotes: [
+        'Fetches random Pokémon and converts sprites to ASCII art in real time.',
+        'Provides players with type and weight hints.',
+      ],
       technologies: ['Blazor Server', 'PokeAPI', 'API Integration'],
       image: '/assets/projects/ascii-ball.jpg',
       demoUrl: 'https://guessthatasciimon-hgdfeafdhqdddef0.canadacentral-01.azurewebsites.net/',
@@ -143,6 +148,10 @@ export const portfolioData: PortfolioData = {
       outcome: 'Turns a running joke into a Discord bot.',
       context: 'Created during a code jam to automate alternating-case text instead of typing it manually.',
       contribution: 'Built the bot as a lightweight, humorous community tool.',
+      engineeringNotes: [
+        'Created during a code jam to automate alternating-case text.',
+        'Built as a lightweight Discord community tool with Python.',
+      ],
       technologies: ['Python', 'Discord API'],
       image: '/assets/projects/project-mockbot.png',
       sourceUrl: 'https://github.com/CaseyTea/Mockbot',

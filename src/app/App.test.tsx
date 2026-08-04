@@ -466,3 +466,78 @@ test('toggles Vim shortcuts from the command palette and persists each update', 
     'true',
   )
 })
+
+test('searches the active buffer, suspends Vim motions, and restores its invoking line', () => {
+  render(<App />)
+
+  fireEvent.keyDown(window, { key: 'j' })
+  fireEvent.keyDown(window, { key: 'j' })
+  expect(document.querySelector('[data-editor-line-id="readme-line-3"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+
+  expect(fireEvent.keyDown(window, { key: '/' })).toBe(false)
+  const input = screen.getByRole('searchbox', { name: 'Search current buffer' })
+  expect(input).toHaveFocus()
+  expect(screen.getByText('-- SEARCH --')).toBeVisible()
+
+  fireEvent.change(input, { target: { value: 'experience' } })
+  const match = document.querySelector('[data-editor-line-id="readme-line-6"]')
+  expect(match).toHaveClass('document-line--search-match')
+  expect(match).toHaveAttribute('aria-current', 'true')
+  expect(screen.getByText('1 of 1 matches')).toBeVisible()
+
+  expect(fireEvent.keyDown(window, { key: 'j' })).toBe(true)
+  expect(match).toHaveAttribute('aria-current', 'true')
+
+  fireEvent.keyDown(input, { key: 'Escape' })
+  expect(screen.queryByRole('searchbox', { name: 'Search current buffer' })).not.toBeInTheDocument()
+  expect(document.querySelector('[data-editor-line-id="readme-line-3"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+  expect(screen.getByRole('heading', { level: 1, name: portfolioData.name })).toHaveFocus()
+})
+
+test('reports a missing buffer pattern without moving the active line', () => {
+  render(<App />)
+  fireEvent.keyDown(window, { key: 'j' })
+
+  fireEvent.keyDown(window, { key: '/' })
+  const input = screen.getByRole('searchbox', { name: 'Search current buffer' })
+  fireEvent.change(input, { target: { value: 'definitely absent' } })
+
+  expect(screen.getByText('0 matches')).toBeVisible()
+  expect(document.querySelector('[data-editor-line-id="readme-line-2"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+
+  fireEvent.keyDown(input, { key: 'Escape' })
+  expect(screen.getByRole('status')).toHaveTextContent(
+    'pattern not found: definitely absent',
+  )
+  expect(document.querySelector('[data-editor-line-id="readme-line-2"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+})
+
+test('resets search when conventional file navigation changes the active buffer', () => {
+  render(<App />)
+
+  fireEvent.keyDown(window, { key: '/' })
+  fireEvent.change(screen.getByRole('searchbox', { name: 'Search current buffer' }), {
+    target: { value: 'casey' },
+  })
+  fireEvent.click(screen.getByRole('button', { name: 'experience.log' }))
+
+  expect(screen.queryByRole('searchbox', { name: 'Search current buffer' })).not.toBeInTheDocument()
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'experience.log')
+  expect(screen.getByRole('heading', { level: 1, name: 'Experience' })).toHaveFocus()
+  expect(document.querySelector('[data-editor-line-id="experience-line-1"]')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+})

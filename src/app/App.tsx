@@ -11,6 +11,8 @@ import type { DocumentActions } from '../editor/document/types'
 import { useActiveLineController } from '../editor/keyboard/useActiveLineController'
 import { useVimInterpreter, type VimEasterEgg } from '../editor/keyboard/useVimInterpreter'
 import { useBufferNavigation } from '../editor/navigation/useBufferNavigation'
+import { BufferSearch } from '../editor/search/BufferSearch'
+import { useBufferSearch } from '../editor/search/useBufferSearch'
 import { EditorWorkspace } from '../editor/workspace/EditorWorkspace'
 
 const registry = createBufferRegistry(portfolioData)
@@ -52,6 +54,13 @@ export function App() {
     bufferId: navigation.activeId,
     lines,
   })
+  const search = useBufferSearch({
+    bufferId: navigation.activeId,
+    lines,
+    activeIndex: activeLine.activeIndex,
+    setActiveIndex: activeLine.setActiveIndex,
+    onStatusMessage: setVimStatusMessage,
+  })
 
   const reportEasterEgg = (command: VimEasterEgg) => {
     setVimStatusMessage(
@@ -64,7 +73,7 @@ export function App() {
   useVimInterpreter({
     vimEnabled: vimShortcutsEnabled,
     isCommandOpen: isCommandPaletteOpen,
-    isSearchOpen: false,
+    isSearchOpen: search.isOpen,
     moveLines: activeLine.moveLines,
     moveHalfPage: activeLine.moveHalfPage,
     moveBoundary: activeLine.moveBoundary,
@@ -75,6 +84,7 @@ export function App() {
       if (id) navigation.openBuffer(id)
     },
     onEasterEgg: reportEasterEgg,
+    onOpenSearch: search.open,
   })
 
   const commands: Command[] = [
@@ -127,11 +137,23 @@ export function App() {
         vimEnabled={vimShortcutsEnabled}
         onToggleVim={toggleVimShortcuts}
         statusMessage={vimStatusMessage ?? navigation.statusMessage}
+        statusSearch={search.isOpen ? (
+          <BufferSearch
+            query={search.query}
+            matchCount={search.matchIndexes.length}
+            currentMatch={search.currentMatch}
+            onClose={search.close}
+            onNext={search.next}
+            onPrevious={search.previous}
+            onQueryChange={search.setQuery}
+          />
+        ) : null}
       >
         <DocumentBuffer
           buffer={navigation.activeBuffer}
           lines={lines}
           activeIndex={activeLine.activeIndex}
+          matchIndexes={search.matchIndexes}
         />
       </EditorWorkspace>
       <CommandPalette commands={commands} onOpenChange={setIsCommandPaletteOpen} />

@@ -24,6 +24,17 @@ function addOpenId(openIds: BufferId[], id: BufferId): BufferId[] {
   return openIds.includes(id) ? openIds : [...openIds, id]
 }
 
+function pushBufferHash(filename: string): void {
+  const nextHash = `#buffer=${filename}`
+  if (window.location.hash === nextHash) return
+
+  window.history.pushState(
+    null,
+    '',
+    window.location.pathname + window.location.search + nextHash,
+  )
+}
+
 export function useBufferNavigation(registry: BufferRegistry) {
   const initialHash = parseBufferHash(window.location.hash, registry)
   const hasInitialHash = window.location.hash.length > 1
@@ -56,6 +67,11 @@ export function useBufferNavigation(registry: BufferRegistry) {
     const handleHashChange = () => {
       const parsed = parseBufferHash(window.location.hash, registry)
 
+      if (window.location.hash.length <= 1) {
+        activate(registry.defaultId)
+        return
+      }
+
       if (parsed.id) {
         activate(parsed.id)
         return
@@ -76,7 +92,7 @@ export function useBufferNavigation(registry: BufferRegistry) {
       if (!buffer) return
 
       activate(id)
-      window.location.hash = `buffer=${buffer.filename}`
+      pushBufferHash(buffer.filename)
     },
     [activate, registry],
   )
@@ -91,7 +107,7 @@ export function useBufferNavigation(registry: BufferRegistry) {
       const buffer = registry.byId.get(nextId)
 
       activate(nextId)
-      if (buffer) window.location.hash = `buffer=${buffer.filename}`
+      if (buffer) pushBufferHash(buffer.filename)
     },
     [activate, activeId, openIds, registry],
   )

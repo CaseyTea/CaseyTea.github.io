@@ -92,3 +92,32 @@ test('treats a runtime unknown hash as a navigation event back to README', () =>
   expect(result.current.statusMessage).toBe('file not found: missing.md')
   expect(result.current.openEpoch).toBe(initialOpenEpoch + 1)
 })
+
+test('treats browser Back to an empty hash as default README navigation', () => {
+  const { result } = renderHook(() => useBufferNavigation(registry))
+
+  act(() => result.current.openBuffer('contact'))
+  const contactOpenEpoch = result.current.openEpoch
+
+  window.history.replaceState(null, '', '/')
+  act(() => window.dispatchEvent(new HashChangeEvent('hashchange')))
+
+  expect(result.current.activeId).toBe('readme')
+  expect(result.current.statusMessage).toBe('opened README.md')
+  expect(result.current.openEpoch).toBe(contactOpenEpoch + 1)
+})
+
+test('activates an internal open only once after the native hashchange task runs', async () => {
+  const { result } = renderHook(() => useBufferNavigation(registry))
+  const initialOpenEpoch = result.current.openEpoch
+
+  await act(async () => {
+    result.current.openBuffer('contact')
+    await new Promise((resolve) => setTimeout(resolve, 0))
+  })
+
+  expect(window.location.hash).toBe('#buffer=contact.md')
+  expect(result.current.activeId).toBe('contact')
+  expect(result.current.statusMessage).toBe('opened contact.md')
+  expect(result.current.openEpoch).toBe(initialOpenEpoch + 1)
+})

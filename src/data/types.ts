@@ -17,6 +17,7 @@ export type Project = {
   outcome: string
   context: string
   contribution: string
+  engineeringNotes?: string[]
   technologies: string[]
   image?: string
   sourceUrl?: string

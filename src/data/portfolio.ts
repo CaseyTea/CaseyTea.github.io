@@ -122,6 +122,10 @@ export const portfolioData: PortfolioData = {
       context: 'Modernized a legacy SQL-based username-generation process for Irvine Unified School District.',
       contribution:
         'Built the .NET Minimal API, extended it with support endpoints, and integrated it with HR and internal IT tools.',
+      engineeringNotes: [
+        'Modernized a legacy SQL-based username-generation process.',
+        'Built a .NET Minimal API with support endpoints for HR and internal IT tools.',
+      ],
       technologies: ['.NET', 'Minimal APIs', 'SQL', 'Entity Framework'],
       image: '/assets/projects/project-usernamegen.png',
     },
@@ -132,6 +136,10 @@ export const portfolioData: PortfolioData = {
       outcome: 'A playable retro terminal-style Pokémon guessing game.',
       context: 'Fetches random Pokémon, converts sprites to ASCII art in real time, and gives players type and weight hints.',
       contribution: 'Created the Blazor Server game to practice working with external APIs while building a fun experiment.',
+      engineeringNotes: [
+        'Fetches random Pokémon and converts sprites to ASCII art in real time.',
+        'Provides players with type and weight hints.',
+      ],
       technologies: ['Blazor Server', 'PokeAPI', 'API Integration'],
       image: '/assets/projects/ascii-ball.jpg',
       demoUrl: 'https://guessthatasciimon-hgdfeafdhqdddef0.canadacentral-01.azurewebsites.net/',
@@ -143,6 +151,10 @@ export const portfolioData: PortfolioData = {
       outcome: 'Turns a running joke into a Discord bot.',
       context: 'Created during a code jam to automate alternating-case text instead of typing it manually.',
       contribution: 'Built the bot as a lightweight, humorous community tool.',
+      engineeringNotes: [
+        'Created during a code jam to automate alternating-case text.',
+        'Built as a lightweight Discord community tool with Python.',
+      ],
       technologies: ['Python', 'Discord API'],
       image: '/assets/projects/project-mockbot.png',
       sourceUrl: 'https://github.com/CaseyTea/Mockbot',

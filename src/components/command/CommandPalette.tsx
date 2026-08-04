@@ -1,13 +1,24 @@
 import { useEffect, useMemo, useRef } from 'react'
 import type { Command } from '../../data/types'
-import { filterCommands, useCommandPalette } from './useCommandPalette'
+import {
+  filterCommands,
+  useCommandPalette,
+  type CommandSubmission,
+} from './useCommandPalette'
 
 type CommandPaletteProps = {
   commands: Command[]
+  disabled?: boolean
+  onSubmit?: (query: string, hasActiveCommand: boolean) => CommandSubmission
   onOpenChange?: (isOpen: boolean) => void
 }
 
-export function CommandPalette({ commands, onOpenChange }: CommandPaletteProps) {
+export function CommandPalette({
+  commands,
+  disabled,
+  onSubmit,
+  onOpenChange,
+}: CommandPaletteProps) {
   const {
     isOpen,
     query,
@@ -16,7 +27,7 @@ export function CommandPalette({ commands, onOpenChange }: CommandPaletteProps) 
     runCommand,
     setQuery,
     setActiveIndex,
-  } = useCommandPalette(commands)
+  } = useCommandPalette(commands, { disabled, onSubmit })
   const inputRef = useRef<HTMLInputElement>(null)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const matchingCommands = useMemo(() => filterCommands(commands, query), [commands, query])
@@ -83,11 +94,17 @@ export function CommandPalette({ commands, onOpenChange }: CommandPaletteProps) 
         </div>
 
         <label className="command-palette__search">
-          <span>Find a command</span>
+          <span className="command-palette__label" aria-hidden="true">
+            Find a command
+          </span>
+          <span className="command-palette__prompt" aria-hidden="true">
+            :
+          </span>
           <input
             ref={inputRef}
             type="search"
             role="combobox"
+            aria-label="Find a command"
             aria-autocomplete="list"
             aria-controls="command-palette-options"
             aria-expanded="true"
@@ -97,7 +114,7 @@ export function CommandPalette({ commands, onOpenChange }: CommandPaletteProps) 
             autoComplete="off"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Type a command…"
+            placeholder="e README.md · help · resume · vim off"
           />
         </label>
 

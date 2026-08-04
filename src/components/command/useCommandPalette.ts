@@ -22,7 +22,19 @@ export function filterCommands(commands: Command[], query: string) {
   })
 }
 
-export function useCommandPalette(commands: Command[]) {
+export type CommandSubmission =
+  | { handled: false }
+  | { handled: true; restoreInvokingFocus?: boolean }
+
+type CommandPaletteOptions = {
+  disabled?: boolean
+  onSubmit?: (query: string, hasActiveCommand: boolean) => CommandSubmission
+}
+
+export function useCommandPalette(
+  commands: Command[],
+  { disabled = false, onSubmit }: CommandPaletteOptions = {},
+) {
   const [isOpen, setIsOpen] = useState(false)
   const [query, updateQuery] = useState('')
   const [activeIndex, setActiveIndex] = useState(0)
@@ -30,10 +42,12 @@ export function useCommandPalette(commands: Command[]) {
   const matchingCommands = useMemo(() => filterCommands(commands, query), [commands, query])
 
   const open = useCallback(() => {
+    if (disabled) return
+
     previouslyFocusedElement.current =
       document.activeElement instanceof HTMLElement ? document.activeElement : null
     setIsOpen(true)
-  }, [])
+  }, [disabled])
 
   const reset = useCallback((restoreFocus: boolean) => {
     setIsOpen(false)
@@ -60,15 +74,22 @@ export function useCommandPalette(commands: Command[]) {
 
   const runActive = useCallback(() => {
     const activeCommand = matchingCommands[activeIndex]
+    const submission = onSubmit?.(query, Boolean(activeCommand))
+
+    if (submission?.handled) {
+      reset(submission.restoreInvokingFocus !== false)
+      return
+    }
 
     if (!activeCommand) return
 
     runCommand(activeCommand)
-  }, [activeIndex, matchingCommands, runCommand])
+  }, [activeIndex, matchingCommands, onSubmit, query, reset, runCommand])
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (!isOpen) {
+        if (disabled) return
         if (isEditableTarget(event.target)) return
 
         const opensWithColon =
@@ -121,7 +142,7 @@ export function useCommandPalette(commands: Command[]) {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [close, isOpen, matchingCommands.length, open, runActive])
+  }, [close, disabled, isOpen, matchingCommands.length, open, runActive])
 
   return {
     isOpen,

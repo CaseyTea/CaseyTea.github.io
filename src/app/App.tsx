@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { CommandPalette } from '../components/command/CommandPalette'
 import { useVimShortcutsPreference } from '../components/keyboard/useVimShortcutsPreference'
 import { portfolioData } from '../data/portfolio'
 import type { Command } from '../data/types'
 import { createBufferRegistry } from '../editor/buffers/createBufferRegistry'
 import type { BufferId } from '../editor/buffers/types'
+import { EditorCommandMode } from '../editor/command/EditorCommandMode'
 import { createDocumentLines } from '../editor/document/createDocumentLines'
 import { DocumentBuffer } from '../editor/document/DocumentBuffer'
 import type { DocumentActions } from '../editor/document/types'
@@ -39,7 +39,7 @@ function openLink(href: string) {
 
 export function App() {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
-  const [vimStatusMessage, setVimStatusMessage] = useState<string | null>(null)
+  const [editorStatusMessage, setEditorStatusMessage] = useState<string | null>(null)
   const { enabled: vimShortcutsEnabled, toggle: toggleVimShortcuts } =
     useVimShortcutsPreference()
   const navigation = useBufferNavigation(registry)
@@ -59,15 +59,17 @@ export function App() {
     lines,
     activeIndex: activeLine.activeIndex,
     setActiveIndex: activeLine.setActiveIndex,
-    onStatusMessage: setVimStatusMessage,
+    onStatusMessage: setEditorStatusMessage,
   })
 
   const reportEasterEgg = (command: VimEasterEgg) => {
-    setVimStatusMessage(
-      command === 'i'
-        ? 'read-only portfolio: insert mode is unavailable'
-        : 'nothing to save: this portfolio is already up to date',
+    setEditorStatusMessage(
+      command === 'i' ? 'portfolio is read-only' : 'portfolio already saved',
     )
+  }
+
+  const setVimShortcuts = (enabled: boolean) => {
+    if (enabled !== vimShortcutsEnabled) toggleVimShortcuts()
   }
 
   useVimInterpreter({
@@ -136,7 +138,7 @@ export function App() {
         onCycleBuffer={navigation.cycleBuffer}
         vimEnabled={vimShortcutsEnabled}
         onToggleVim={toggleVimShortcuts}
-        statusMessage={vimStatusMessage ?? navigation.statusMessage}
+        statusMessage={editorStatusMessage ?? navigation.statusMessage}
         statusSearch={search.isOpen ? (
           <BufferSearch
             query={search.query}
@@ -156,7 +158,16 @@ export function App() {
           matchIndexes={search.matchIndexes}
         />
       </EditorWorkspace>
-      <CommandPalette commands={commands} onOpenChange={setIsCommandPaletteOpen} />
+      <EditorCommandMode
+        commands={commands}
+        registry={registry}
+        isSearchOpen={search.isOpen}
+        onOpenBuffer={navigation.openBuffer}
+        onResume={downloadResume}
+        onSetVim={setVimShortcuts}
+        onStatusMessage={setEditorStatusMessage}
+        onOpenChange={setIsCommandPaletteOpen}
+      />
     </>
   )
 }

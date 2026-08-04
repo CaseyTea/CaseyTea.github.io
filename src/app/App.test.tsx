@@ -253,6 +253,44 @@ test('runs destination commands by aligning the hash, current file, and heading 
   expect(focus).toHaveBeenCalledWith({ preventScroll: true })
 })
 
+test('opens buffer aliases typed as editor commands and transfers heading focus', () => {
+  render(<App />)
+  fireEvent.keyDown(window, { key: ':' })
+
+  const input = screen.getByRole('combobox', { name: 'Find a command' })
+  fireEvent.change(input, { target: { value: ':e experience.log' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'experience.log')
+  expect(screen.getByRole('heading', { level: 1, name: 'Experience' })).toHaveFocus()
+})
+
+test('opens help through a typed editor command', () => {
+  render(<App />)
+  fireEvent.keyDown(window, { key: ':' })
+
+  const input = screen.getByRole('combobox', { name: 'Find a command' })
+  fireEvent.change(input, { target: { value: ':help' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'help.txt')
+  expect(screen.getByRole('heading', { level: 1, name: 'Help' })).toHaveFocus()
+})
+
+test('keeps the current buffer and reports an invalid typed editor command', () => {
+  render(<App />)
+  fireEvent.keyDown(window, { key: ':' })
+
+  const input = screen.getByRole('combobox', { name: 'Find a command' })
+  fireEvent.change(input, { target: { value: ':make-coffee' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'README.md')
+  expect(screen.getByRole('status')).toHaveTextContent(
+    'not an editor command: make-coffee',
+  )
+})
+
 test.each([
   ['resume', 'Download resume'],
   ['linkedin', 'Open LinkedIn'],
@@ -394,11 +432,28 @@ test('reports harmless insert and write-quit easter eggs in the editor status', 
   render(<App />)
 
   fireEvent.keyDown(window, { key: 'i' })
-  expect(screen.getByRole('status')).toHaveTextContent(/read-only/i)
+  expect(screen.getByRole('status')).toHaveTextContent('portfolio is read-only')
 
   fireEvent.keyDown(window, { key: 'Z', shiftKey: true })
   fireEvent.keyDown(window, { key: 'Z', shiftKey: true })
-  expect(screen.getByRole('status')).toHaveTextContent(/nothing to save/i)
+  expect(screen.getByRole('status')).toHaveTextContent('portfolio already saved')
+  expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'README.md')
+})
+
+test.each([
+  [':w', 'portfolio already saved'],
+  [':q', "close this tab whenever you're ready"],
+] as const)('reports harmless typed command %s through editor status', (command, message) => {
+  render(<App />)
+  fireEvent.keyDown(window, { key: ':' })
+
+  const input = screen.getByRole('combobox', { name: 'Find a command' })
+  fireEvent.change(input, { target: { value: command } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+
+  expect(screen.getByRole('status')).toHaveTextContent(message)
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'README.md')
 })
 
 test('restores the disabled preference and leaves every Vim motion untouched', () => {
@@ -498,6 +553,23 @@ test('searches the active buffer, suspends Vim motions, and restores its invokin
     'true',
   )
   expect(screen.getByRole('heading', { level: 1, name: portfolioData.name })).toHaveFocus()
+})
+
+test('keeps command and search modes separate while suppressing Vim input', () => {
+  const { unmount } = render(<App />)
+
+  fireEvent.keyDown(window, { key: '/' })
+  expect(screen.getByRole('searchbox', { name: 'Search current buffer' })).toHaveFocus()
+  expect(fireEvent.keyDown(window, { key: 'k', ctrlKey: true })).toBe(true)
+  expect(screen.queryByRole('dialog', { name: 'Portfolio commands' })).not.toBeInTheDocument()
+  expect(fireEvent.keyDown(window, { key: 'j' })).toBe(true)
+
+  unmount()
+  render(<App />)
+  fireEvent.keyDown(window, { key: ':' })
+  expect(screen.getByRole('dialog', { name: 'Portfolio commands' })).toBeVisible()
+  expect(fireEvent.keyDown(window, { key: '/' })).toBe(true)
+  expect(screen.queryByRole('searchbox', { name: 'Search current buffer' })).not.toBeInTheDocument()
 })
 
 test('reports a missing buffer pattern without moving the active line', () => {

@@ -520,52 +520,53 @@ a.contact-card:hover {
 }
 
 .command-palette__backdrop {
-  --command-palette-start-space: clamp(4rem, 12dvh, 8rem);
-  --command-palette-end-space: var(--space-3);
+  --command-palette-start-space: var(--space-3);
+  --command-palette-end-space: clamp(3.75rem, 9dvh, 5.5rem);
 
   position: fixed;
   z-index: 20;
   inset: 0;
   display: grid;
-  place-items: start center;
+  place-items: end center;
   height: 100vh;
   height: 100dvh;
   overflow-y: auto;
-  background: rgb(2 5 3 / 78%);
+  background: rgb(2 5 3 / 42%);
   padding: var(--command-palette-start-space) var(--space-3)
     var(--command-palette-end-space);
-  backdrop-filter: blur(0.4rem);
 }
 
 .command-palette {
   display: flex;
   flex-direction: column;
-  width: min(100%, 42rem);
+  width: min(100%, 72rem);
   max-height: min(
-    38rem,
+    26rem,
     calc(100vh - var(--command-palette-start-space) - var(--command-palette-end-space))
   );
   max-height: min(
-    38rem,
+    26rem,
     calc(100dvh - var(--command-palette-start-space) - var(--command-palette-end-space))
   );
   overflow: hidden;
   border: 1px solid var(--color-accent);
-  border-radius: var(--radius-medium);
+  border-radius: 0;
   background: var(--color-surface-raised);
-  box-shadow: 0 1.5rem 5rem rgb(0 0 0 / 60%);
+  box-shadow: 0 -0.75rem 2.5rem rgb(0 0 0 / 45%);
 }
 
 .command-palette__header {
   display: flex;
   justify-content: space-between;
-  gap: var(--space-3);
-  align-items: flex-start;
-  padding: var(--space-3);
+  gap: var(--space-2);
+  align-items: center;
+  border-block-end: 1px solid var(--color-border);
+  padding: 0.45rem var(--space-2);
 }
 
 .command-palette__eyebrow {
-  margin-block-end: 0.2rem;
+  display: inline;
+  margin-inline-end: var(--space-2);
   color: var(--color-accent);
   font: 0.68rem/1.4 var(--font-mono);
   letter-spacing: 0.1em;
@@ -573,8 +574,10 @@ a.contact-card:hover {
 }
 
 .command-palette h2 {
+  display: inline;
   margin: 0;
-  font-size: 1.3rem;
+  font: 0.78rem/1.4 var(--font-mono);
+  color: var(--color-text-muted);
 }
 
 .command-palette__close {
@@ -598,11 +601,22 @@ a.contact-card:hover {
 
 .command-palette__search {
   display: grid;
-  gap: var(--space-1);
-  border-block: 1px solid var(--color-border);
-  padding: var(--space-3);
+  grid-template-columns: auto 1fr;
+  gap: var(--space-2);
+  align-items: center;
+  border-block-end: 1px solid var(--color-border);
+  padding: 0.65rem var(--space-2);
   color: var(--color-text-muted);
   font: 0.72rem/1.4 var(--font-mono);
+}
+
+.command-palette__label {
+  display: none;
+}
+
+.command-palette__prompt {
+  color: var(--color-accent-strong);
+  font: 700 1.15rem/1 var(--font-mono);
 }
 
 .command-palette__search input {
@@ -627,7 +641,7 @@ a.contact-card:hover {
 .command-palette__options {
   flex: 1 1 auto;
   min-height: 0;
-  max-height: 22rem;
+  max-height: 15rem;
   overflow-y: auto;
   margin: 0;
   padding: var(--space-1);
@@ -639,9 +653,9 @@ a.contact-card:hover {
   justify-content: space-between;
   gap: var(--space-3);
   align-items: center;
-  min-height: 3rem;
-  border-radius: var(--radius-small);
-  padding: 0.6rem var(--space-2);
+  min-height: 2.3rem;
+  border-radius: 0;
+  padding: 0.4rem var(--space-2);
   color: var(--color-text-muted);
   cursor: pointer;
   font-family: var(--font-mono);
@@ -676,6 +690,60 @@ a.contact-card:hover {
   .command-palette__backdrop {
     --command-palette-start-space: var(--space-2);
     --command-palette-end-space: var(--space-2);
+  }
+}
+
+@media (max-width: 48rem) {
+  .command-palette__backdrop {
+    --command-palette-start-space: var(--space-2);
+    --command-palette-end-space: var(--space-2);
+
+    place-items: start center;
+    background: rgb(2 5 3 / 78%);
+    backdrop-filter: blur(0.4rem);
+  }
+
+  .command-palette {
+    max-height: calc(100vh - var(--space-4));
+    max-height: calc(100dvh - var(--space-4));
+    border-radius: var(--radius-medium);
+    box-shadow: 0 1.5rem 5rem rgb(0 0 0 / 60%);
+  }
+
+  .command-palette__header {
+    align-items: flex-start;
+    padding: var(--space-3);
+  }
+
+  .command-palette__eyebrow,
+  .command-palette h2 {
+    display: block;
+  }
+
+  .command-palette__eyebrow {
+    margin-block-end: 0.2rem;
+  }
+
+  .command-palette h2 {
+    font-size: 1rem;
+  }
+
+  .command-palette__search {
+    padding: var(--space-3);
+  }
+
+  .command-palette__label {
+    display: block;
+    grid-column: 1 / -1;
+  }
+
+  .command-palette__options {
+    max-height: 22rem;
+  }
+
+  .command-palette__option {
+    min-height: 3rem;
+    border-radius: var(--radius-small);
   }
 }
 

@@ -113,6 +113,14 @@ test('filters commands by keywords as the user types', () => {
   expect(screen.queryByRole('option', { name: 'Go to overview' })).not.toBeInTheDocument()
 })
 
+test('presents the input as an editor command line without changing its accessible label', () => {
+  render(<CommandPalette commands={createCommands()} />)
+  openWithColon()
+
+  expect(screen.getByText(':')).toHaveAttribute('aria-hidden', 'true')
+  expect(screen.getByRole('combobox', { name: 'Find a command' })).toBeVisible()
+})
+
 test('moves selection with arrow keys and activates the selected command with Enter', () => {
   const commands = createCommands()
   render(<CommandPalette commands={commands} />)

@@ -2,52 +2,71 @@ import { useState } from 'react'
 import { CommandPalette } from '../components/command/CommandPalette'
 import { useVimScrollMotions } from '../components/keyboard/useVimScrollMotions'
 import { useVimShortcutsPreference } from '../components/keyboard/useVimShortcutsPreference'
-import { AppShell } from '../components/layout/AppShell'
-import { AboutSection } from '../components/sections/AboutSection'
-import { ContactSection } from '../components/sections/ContactSection'
-import { ExperienceSection } from '../components/sections/ExperienceSection'
-import { OverviewSection } from '../components/sections/OverviewSection'
-import { ProjectsSection } from '../components/sections/ProjectsSection'
-import { SkillsSection } from '../components/sections/SkillsSection'
 import { portfolioData } from '../data/portfolio'
 import type { Command } from '../data/types'
+import { createBufferRegistry } from '../editor/buffers/createBufferRegistry'
+import type { BufferId } from '../editor/buffers/types'
+import { createDocumentLines } from '../editor/document/createDocumentLines'
+import { DocumentBuffer } from '../editor/document/DocumentBuffer'
+import type { DocumentActions } from '../editor/document/types'
+import { useBufferNavigation } from '../editor/navigation/useBufferNavigation'
+import { EditorWorkspace } from '../editor/workspace/EditorWorkspace'
 
-function activateSection(id: string) {
-  const destination = document.getElementById(id)
-  window.location.hash = id
-  destination?.scrollIntoView?.({ block: 'start' })
-  destination?.focus({ preventScroll: true })
+const registry = createBufferRegistry(portfolioData)
+const firstProjectId = registry.primaryIds.find((id) => id.startsWith('project-')) ?? 'readme'
+
+const commandBufferIds: Record<string, BufferId> = {
+  overview: 'readme',
+  experience: 'experience',
+  projects: firstProjectId,
+  skills: 'about',
+  about: 'about',
+  contact: 'contact',
+}
+
+function downloadResume() {
+  document
+    .querySelector<HTMLAnchorElement>(`a[download][href="${portfolioData.resumeUrl}"]`)
+    ?.click()
+}
+
+function openLink(href: string) {
+  window.open(href, '_blank', 'noopener,noreferrer')
 }
 
 export function App() {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
   const { enabled: vimShortcutsEnabled, toggle: toggleVimShortcuts } =
     useVimShortcutsPreference()
+  const navigation = useBufferNavigation(registry)
   useVimScrollMotions({ disabled: isCommandPaletteOpen || !vimShortcutsEnabled })
+
+  const documentActions: DocumentActions = {
+    openBuffer: navigation.openBuffer,
+    openLink,
+    downloadResume,
+  }
+  const lines = createDocumentLines(navigation.activeBuffer, portfolioData, documentActions)
 
   const commands: Command[] = [
     ...portfolioData.commandSections.map(({ id, keywords, label }) => ({
       id: `section-${id}`,
       label,
       keywords,
-      run: () => activateSection(id),
+      run: () => navigation.openBuffer(commandBufferIds[id] ?? registry.defaultId),
       restoreInvokingFocus: false,
     })),
     {
       id: 'resume',
       label: 'Download resume',
       keywords: ['resume', 'cv', 'pdf'],
-      run: () => {
-        document
-          .querySelector<HTMLAnchorElement>(`a[download][href="${portfolioData.resumeUrl}"]`)
-          ?.click()
-      },
+      run: downloadResume,
     },
     ...portfolioData.contacts.map(({ href, label }) => ({
       id: `contact-${label.toLocaleLowerCase()}`,
       label: `Open ${label}`,
       keywords: ['contact', label.toLocaleLowerCase()],
-      run: () => window.open(href, '_blank', 'noopener,noreferrer'),
+      run: () => openLink(href),
     })),
     {
       id: 'toggle-vim-shortcuts',
@@ -69,23 +88,18 @@ export function App() {
 
   return (
     <>
-      <AppShell vimShortcutsEnabled={vimShortcutsEnabled}>
-        <OverviewSection
-          introduction={portfolioData.introduction}
-          metrics={portfolioData.metrics}
-          featuredProject={portfolioData.projects[0]}
-          resumeUrl={portfolioData.resumeUrl}
-        />
-        <ExperienceSection experiences={portfolioData.experience} />
-        <ProjectsSection projects={portfolioData.projects} />
-        <SkillsSection skillGroups={portfolioData.skillGroups} />
-        <AboutSection />
-        <ContactSection
-          contacts={portfolioData.contacts}
-          location={portfolioData.location}
-          resumeUrl={portfolioData.resumeUrl}
-        />
-      </AppShell>
+      <EditorWorkspace
+        registry={registry}
+        activeId={navigation.activeId}
+        openIds={navigation.openIds}
+        onOpenBuffer={navigation.openBuffer}
+        onCycleBuffer={navigation.cycleBuffer}
+        vimEnabled={vimShortcutsEnabled}
+        onToggleVim={toggleVimShortcuts}
+        statusMessage={navigation.statusMessage}
+      >
+        <DocumentBuffer buffer={navigation.activeBuffer} lines={lines} />
+      </EditorWorkspace>
       <CommandPalette commands={commands} onOpenChange={setIsCommandPaletteOpen} />
     </>
   )

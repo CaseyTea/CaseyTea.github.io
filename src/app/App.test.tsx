@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { readFileSync } from 'node:fs'
 import { afterEach, beforeEach, vi } from 'vitest'
+import { portfolioData } from '../data/portfolio'
 import { App } from './App'
 
 const vimShortcutsStorageKey = 'portfolio:vim-scroll-shortcuts-enabled'
@@ -31,6 +32,7 @@ function createMemoryStorage(): Storage {
 }
 
 beforeEach(() => {
+  window.history.replaceState(null, '', '/')
   vi.stubGlobal('localStorage', createMemoryStorage())
 })
 
@@ -39,14 +41,41 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-const sectionLinks = [
-  ['Overview', '#overview'],
-  ['Experience', '#experience'],
-  ['Projects', '#projects'],
-  ['Skills', '#skills'],
-  ['About', '#about'],
-  ['Contact', '#contact'],
-] as const
+test('starts in the README editor buffer with conventional file navigation', () => {
+  render(<App />)
+
+  expect(screen.getByRole('navigation', { name: 'Files' })).toBeVisible()
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'README.md')
+  expect(screen.getByRole('heading', { level: 1, name: 'Casey Franceschy' })).toHaveFocus()
+  expect(screen.getByRole('button', { name: 'experience.log' })).toBeVisible()
+  expect(screen.getByRole('button', { name: 'View experience' })).toBeVisible()
+  expect(screen.queryByRole('navigation', { name: 'Portfolio sections' })).not.toBeInTheDocument()
+})
+
+test('opens a selected portfolio document from the explorer', () => {
+  render(<App />)
+
+  fireEvent.click(screen.getByRole('button', { name: 'experience.log' }))
+
+  expect(window.location.hash).toBe('#buffer=experience.log')
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'experience.log')
+  expect(screen.getByRole('heading', { level: 1, name: 'Experience' })).toHaveFocus()
+  expect(screen.getByRole('heading', { name: 'Quality Engineer (Intern)' })).toBeVisible()
+})
+
+test('opens Experience and Projects from README primary actions', () => {
+  render(<App />)
+
+  fireEvent.click(screen.getByRole('button', { name: 'View experience' }))
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'experience.log')
+
+  fireEvent.click(screen.getByRole('button', { name: 'README.md' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Browse projects' }))
+  expect(screen.getByRole('main')).toHaveAttribute(
+    'aria-label',
+    'projects/username-generator-api.md',
+  )
+})
 
 test('uses plain Resume terminology in visitor-facing app copy and metadata', () => {
   render(<App />)
@@ -58,208 +87,139 @@ test('uses plain Resume terminology in visitor-facing app copy and metadata', ()
   expect(metadata).not.toMatch(/résumé/i)
 })
 
-test('renders Casey’s role and resume link', () => {
+test('renders Casey’s role and semantic resume links', () => {
   render(<App />)
 
-  expect(screen.getByRole('heading', { name: /Casey Franceschy/i })).toBeVisible()
-  expect(
-    within(screen.getByRole('banner')).getByRole('link', { name: /download resume/i }),
-  ).toHaveAttribute('href', '/assets/Casey_Franceschy.pdf')
+  const banner = screen.getByRole('banner')
+  expect(within(banner).getByText(portfolioData.name)).toBeVisible()
+  expect(within(banner).getByText(portfolioData.title)).toBeVisible()
+  expect(within(banner).getByRole('link', { name: 'Download resume' })).toHaveAttribute(
+    'href',
+    portfolioData.resumeUrl,
+  )
+  expect(screen.getAllByRole('link', { name: 'Download resume' })).toHaveLength(2)
 })
 
-test('provides semantic landmarks and accessible portfolio navigation', () => {
-  window.history.replaceState(null, '', '/')
+test('provides editor landmarks, selected-heading skip navigation, and every real buffer', () => {
   render(<App />)
 
+  const heading = screen.getByRole('heading', { level: 1, name: portfolioData.name })
   expect(screen.getByRole('link', { name: /skip to content/i })).toHaveAttribute(
     'href',
-    '#main-content',
+    `#${heading.id}`,
   )
   expect(screen.getByRole('banner')).toBeVisible()
-  expect(screen.getByRole('navigation', { name: 'Portfolio sections' })).toBeVisible()
-  expect(screen.getByRole('main')).toHaveAttribute('id', 'main-content')
-  expect(screen.getByRole('contentinfo')).toBeVisible()
+  expect(screen.getByRole('navigation', { name: 'Files' })).toBeVisible()
+  expect(screen.getByRole('main')).toHaveAttribute('id', 'active-buffer')
+  expect(screen.getByRole('contentinfo', { name: 'Editor status' })).toBeVisible()
 
-  sectionLinks.forEach(([label, href]) => {
-    expect(screen.getByRole('link', { name: label })).toHaveAttribute('href', href)
-    expect(screen.getByRole('link', { name: label })).toBeVisible()
-  })
+  ;[
+    'README.md',
+    'experience.log',
+    'projects/username-generator-api.md',
+    'projects/guess-that-ascii-mon.md',
+    'projects/mockbot.md',
+    'about.md',
+    'contact.md',
+    'help.txt',
+  ].forEach((path) => expect(screen.getByRole('button', { name: path })).toBeVisible())
 })
 
-test('identifies the active section in visible navigation and follows hash changes', () => {
-  window.history.replaceState(null, '', '/')
+test('identifies the active buffer and follows hash changes', () => {
+  window.history.replaceState(null, '', '/#buffer=contact.md')
   render(<App />)
 
-  const overviewLink = screen.getByRole('link', { name: 'Overview' })
-  const skillsLink = screen.getByRole('link', { name: 'Skills' })
+  expect(screen.getByRole('button', { name: 'contact.md' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  )
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'contact.md')
 
-  expect(overviewLink).toHaveAttribute('aria-current', 'location')
-  expect(skillsLink).not.toHaveAttribute('aria-current')
-  expect(screen.getByLabelText('Current section: Overview')).toBeVisible()
-
-  window.history.replaceState(null, '', '/#skills')
+  window.history.replaceState(null, '', '/#buffer=about.md')
   fireEvent(window, new HashChangeEvent('hashchange'))
 
-  expect(overviewLink).not.toHaveAttribute('aria-current')
-  expect(skillsLink).toHaveAttribute('aria-current', 'location')
-  expect(screen.getByLabelText('Current section: Skills')).toBeVisible()
+  expect(screen.getByRole('button', { name: 'about.md' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  )
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'about.md')
 })
 
-test('identifies Casey and labels the professional profile links', () => {
+test('shows all three real career metrics on README', () => {
   render(<App />)
 
-  expect(screen.getByRole('img', { name: /Casey Franceschy/i })).toHaveAttribute(
-    'src',
-    '/assets/my-memoji.png',
-  )
-  expect(screen.getByRole('link', { name: 'GitHub' })).toHaveAttribute(
-    'href',
-    'https://github.com/CaseyTea',
-  )
-  expect(screen.getByRole('link', { name: 'LinkedIn' })).toHaveAttribute(
-    'href',
-    'https://www.linkedin.com/in/casey-franceschy-694823124/',
-  )
-})
-
-test('renders the complete portfolio as six named regions', () => {
-  render(<App />)
-
-  const sections = [
-    ['overview', /software that makes useful work easier/i],
-    ['experience', /experience/i],
-    ['projects', /selected projects/i],
-    ['skills', /skills/i],
-    ['about', /about me/i],
-    ['contact', /let’s work together/i],
-  ] as const
-
-  sections.forEach(([id, name]) => {
-    expect(screen.getByRole('region', { name })).toHaveAttribute('id', id)
+  const metrics = screen.getByRole('list', { name: 'Career impact' })
+  portfolioData.metrics.forEach(({ label, value }) => {
+    expect(within(metrics).getByText(value)).toBeVisible()
+    expect(within(metrics).getByText(label)).toBeVisible()
   })
 })
 
-test('shows three career metrics and keeps professional work before side projects', () => {
+test('points every visible resume action to the PDF asset', () => {
   render(<App />)
 
-  const overview = screen.getByRole('region', { name: /software that makes useful work easier/i })
-  expect(within(overview).getAllByRole('term')).toHaveLength(3)
-
-  const professionalHeading = screen.getByRole('heading', { name: 'Professional work' })
-  const sideProjectHeading = screen.getByRole('heading', { name: 'Side projects' })
-
-  expect(
-    professionalHeading.compareDocumentPosition(sideProjectHeading) & Node.DOCUMENT_POSITION_FOLLOWING,
-  ).toBeTruthy()
-})
-
-test('points every resume action to the PDF asset', () => {
-  render(<App />)
-
-  const resumeActions = screen.getAllByRole('link', { name: /resume/i })
-
-  expect(resumeActions.length).toBeGreaterThan(1)
-  resumeActions.forEach((action) => {
-    expect(action).toHaveAttribute('href', '/assets/Casey_Franceschy.pdf')
+  screen.getAllByRole('link', { name: /download resume/i }).forEach((action) => {
+    expect(action).toHaveAttribute('href', portfolioData.resumeUrl)
+    expect(action).toHaveAttribute('download')
   })
 })
 
-test('keeps personal topics in the About section', () => {
+test('renders evidence-backed skill groups in the About buffer without ratings', () => {
   render(<App />)
+  fireEvent.click(screen.getByRole('button', { name: 'about.md' }))
 
-  const about = screen.getByRole('region', { name: /about me/i })
-  const topics = [
-    /mechanical keyboards/i,
-    /Neovim/i,
-    /Vim motions/i,
-    /code jams/i,
-    /frogs/i,
-    /learning through playful projects/i,
-  ]
-
-  topics.forEach((topic) => expect(within(about).getByText(topic)).toBeVisible())
+  const about = screen.getByRole('article', { name: `About ${portfolioData.name}` })
+  portfolioData.skillGroups.forEach(({ skills, title }) => {
+    expect(within(about).getByRole('heading', { name: title })).toBeVisible()
+    skills.forEach((skill) => expect(within(about).getByText(skill)).toBeVisible())
+  })
+  expect(within(about).queryByRole('progressbar')).not.toBeInTheDocument()
+  expect(about.querySelector('meter')).not.toBeInTheDocument()
 })
 
 test('provides contact channels, verified location, and no contact form', () => {
   render(<App />)
+  fireEvent.click(screen.getByRole('button', { name: 'contact.md' }))
 
-  const contact = screen.getByRole('region', { name: /let’s work together/i })
-
-  expect(within(contact).getByRole('link', { name: /email/i })).toHaveAttribute(
-    'href',
-    'mailto:casey.franceschy@gmail.com',
+  const contact = screen.getByRole('article', { name: 'Contact' })
+  portfolioData.contacts.forEach(({ href, label }) =>
+    expect(within(contact).getByRole('link', { name: label })).toHaveAttribute('href', href),
   )
-  expect(within(contact).getByRole('link', { name: /github/i })).toHaveAttribute(
-    'href',
-    'https://github.com/CaseyTea',
-  )
-  expect(within(contact).getByRole('link', { name: /linkedin/i })).toHaveAttribute(
-    'href',
-    'https://www.linkedin.com/in/casey-franceschy-694823124/',
-  )
-  expect(within(contact).getByText('Westminster, California')).toBeVisible()
+  expect(within(contact).getByText(portfolioData.location)).toBeVisible()
   expect(contact.querySelector('form')).not.toBeInTheDocument()
 })
 
-test('groups evidence-backed skills without ratings or progress bars', () => {
+test('renders project evidence and only links available for each selected project', () => {
   render(<App />)
 
-  const skills = screen.getByRole('region', { name: /^skills$/i })
-
-  expect(within(skills).getByRole('heading', { name: 'Application development' })).toBeVisible()
-  expect(within(skills).getByRole('heading', { name: 'Data and APIs' })).toBeVisible()
-  expect(within(skills).getByRole('heading', { name: 'Cloud and delivery' })).toBeVisible()
-  expect(within(skills).getByText('.NET 8')).toBeVisible()
-  expect(within(skills).getByText('REST APIs')).toBeVisible()
-  expect(within(skills).getByText('Azure DevOps')).toBeVisible()
-  expect(within(skills).queryByRole('progressbar')).not.toBeInTheDocument()
-  expect(skills.querySelector('meter')).not.toBeInTheDocument()
-})
-
-test('renders project evidence and only the links available for each project', () => {
-  render(<App />)
-
-  const usernameGenerator = screen
-    .getByRole('heading', { name: 'Username Generator API' })
-    .closest('article')
-  const asciiMon = screen.getByRole('heading', { name: 'GuessThatAsciiMon' }).closest('article')
-  const mockBot = screen.getByRole('heading', { name: 'MockBot' }).closest('article')
-
-  expect(usernameGenerator).not.toBeNull()
-  expect(within(usernameGenerator!).getByText(/collision-free usernames/i)).toBeVisible()
-  expect(within(usernameGenerator!).getByText(/Modernized a legacy SQL-based/i)).toBeVisible()
-  expect(within(usernameGenerator!).getByText(/Built the \.NET Minimal API/i)).toBeVisible()
-  expect(within(usernameGenerator!).getByRole('img')).toHaveAttribute(
+  fireEvent.click(screen.getByRole('button', { name: 'projects/username-generator-api.md' }))
+  let project = screen.getByRole('article', { name: 'Username Generator API' })
+  expect(within(project).getByText(/collision-free usernames/i)).toBeVisible()
+  expect(within(project).getByRole('img')).toHaveAttribute(
     'src',
     '/assets/projects/project-usernamegen.png',
   )
-  expect(
-    within(
-      within(usernameGenerator!).getByRole('list', {
-        name: 'Username Generator API technologies',
-      }),
-    ).getAllByRole('listitem'),
-  ).toHaveLength(4)
-  expect(within(usernameGenerator!).queryByRole('link')).not.toBeInTheDocument()
+  expect(within(project).queryByRole('link')).not.toBeInTheDocument()
 
-  expect(asciiMon).not.toBeNull()
-  expect(within(asciiMon!).getByRole('link', { name: 'View live project' })).toHaveAttribute(
+  fireEvent.click(screen.getByRole('button', { name: 'projects/guess-that-ascii-mon.md' }))
+  project = screen.getByRole('article', { name: 'GuessThatAsciiMon' })
+  expect(within(project).getByRole('link', { name: 'View live project' })).toHaveAttribute(
     'href',
-    'https://guessthatasciimon-hgdfeafdhqdddef0.canadacentral-01.azurewebsites.net/',
+    portfolioData.projects[1].demoUrl,
   )
-  expect(within(asciiMon!).queryByRole('link', { name: 'View source' })).not.toBeInTheDocument()
+  expect(within(project).queryByRole('link', { name: 'View source' })).not.toBeInTheDocument()
 
-  expect(mockBot).not.toBeNull()
-  expect(within(mockBot!).getByRole('link', { name: 'View source' })).toHaveAttribute(
+  fireEvent.click(screen.getByRole('button', { name: 'projects/mockbot.md' }))
+  project = screen.getByRole('article', { name: 'MockBot' })
+  expect(within(project).getByRole('link', { name: 'View source' })).toHaveAttribute(
     'href',
-    'https://github.com/CaseyTea/Mockbot',
+    portfolioData.projects[2].sourceUrl,
   )
-  expect(within(mockBot!).queryByRole('link', { name: 'View live project' })).not.toBeInTheDocument()
+  expect(within(project).queryByRole('link', { name: 'View live project' })).not.toBeInTheDocument()
 })
 
-test('offers commands for every portfolio section without replacing visible navigation', () => {
+test('offers commands for every portfolio destination alongside file navigation', () => {
   render(<App />)
-
   fireEvent.keyDown(window, { key: ':' })
 
   const options = within(screen.getByRole('listbox', { name: 'Available commands' }))
@@ -272,56 +232,25 @@ test('offers commands for every portfolio section without replacing visible navi
     'Go to contact',
   ].forEach((label) => expect(options.getByRole('option', { name: label })).toBeVisible())
 
-  expect(screen.getByRole('navigation', { name: 'Portfolio sections' })).toBeVisible()
+  expect(screen.getByRole('navigation', { name: 'Files' })).toBeVisible()
 })
 
-test('runs section commands by aligning the hash, active status, and destination focus', () => {
-  window.history.replaceState(null, '', '/')
+test('runs destination commands by aligning the hash, current file, and heading focus', () => {
+  const focus = vi.spyOn(HTMLElement.prototype, 'focus')
   render(<App />)
-
-  const contact = screen.getByRole('region', { name: /let’s work together/i })
-  const offscreenTrigger = within(contact).getByRole('link', { name: /download pdf/i })
-  const projects = screen.getByRole('region', { name: /selected projects/i })
-  const focus = vi.spyOn(projects, 'focus')
-
-  offscreenTrigger.focus()
-  expect(offscreenTrigger).toHaveFocus()
-  fireEvent.keyDown(window, { key: ':' })
-
-  const input = screen.getByRole('combobox', { name: 'Find a command' })
-  fireEvent.change(input, { target: { value: 'projects' } })
-  fireEvent.keyDown(input, { key: 'Enter' })
-
-  expect(window.location.hash).toBe('#projects')
-  expect(projects).toHaveFocus()
-  expect(focus).toHaveBeenCalledWith({ preventScroll: true })
-  expect(offscreenTrigger).not.toHaveFocus()
-})
-
-test('explicitly scrolls an already-current section into view before focusing it', () => {
-  window.history.replaceState(null, '', '/#projects')
-  render(<App />)
-
-  const projects = screen.getByRole('region', { name: /selected projects/i })
-  const scrollIntoView = vi.fn()
-  const focus = vi.spyOn(projects, 'focus')
-  Object.defineProperty(projects, 'scrollIntoView', {
-    configurable: true,
-    value: scrollIntoView,
-  })
 
   fireEvent.keyDown(window, { key: ':' })
   const input = screen.getByRole('combobox', { name: 'Find a command' })
   fireEvent.change(input, { target: { value: 'projects' } })
   fireEvent.keyDown(input, { key: 'Enter' })
 
-  expect(window.location.hash).toBe('#projects')
-  expect(scrollIntoView).toHaveBeenCalledOnce()
-  expect(focus).toHaveBeenCalledWith({ preventScroll: true })
-  expect(scrollIntoView.mock.invocationCallOrder[0]).toBeLessThan(
-    focus.mock.invocationCallOrder[0],
+  expect(window.location.hash).toBe('#buffer=username-generator-api.md')
+  expect(screen.getByRole('main')).toHaveAttribute(
+    'aria-label',
+    'projects/username-generator-api.md',
   )
-  expect(projects).toHaveFocus()
+  expect(screen.getByRole('heading', { name: 'Username Generator API' })).toHaveFocus()
+  expect(focus).toHaveBeenCalledWith({ preventScroll: true })
 })
 
 test.each([
@@ -359,7 +288,6 @@ test('triggers the existing resume download from its command', () => {
   fireEvent.keyDown(input, { key: 'Enter' })
 
   expect(click).toHaveBeenCalledOnce()
-  click.mockRestore()
 })
 
 test('opens external contact destinations from commands', () => {
@@ -372,18 +300,19 @@ test('opens external contact destinations from commands', () => {
   fireEvent.keyDown(input, { key: 'Enter' })
 
   expect(open).toHaveBeenCalledWith(
-    'https://www.linkedin.com/in/casey-franceschy-694823124/',
+    portfolioData.contacts[2].href,
     '_blank',
     'noopener,noreferrer',
   )
-  open.mockRestore()
 })
 
-test('advertises optional shortcuts and provides a shortcut-help command', () => {
+test('provides shortcut help through both conventional and command controls', () => {
   const alert = vi.spyOn(window, 'alert').mockImplementation(() => undefined)
   render(<App />)
 
-  expect(screen.getByText('Commands: : or Command/Ctrl+K (optional)')).toBeVisible()
+  fireEvent.click(screen.getByRole('button', { name: 'Keyboard shortcuts' }))
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'help.txt')
+  expect(screen.getByText(/Mouse, touch, Tab, and Enter/i)).toBeVisible()
 
   fireEvent.keyDown(window, { key: ':' })
   const input = screen.getByRole('combobox', { name: 'Find a command' })
@@ -393,7 +322,6 @@ test('advertises optional shortcuts and provides a shortcut-help command', () =>
   expect(alert).toHaveBeenCalledWith(
     'Open commands with : or Command/Ctrl+K. Vim scroll shortcuts are enabled and can be disabled from this command palette. Scroll with j/k, Ctrl+d/Ctrl+u, gg (top), and G (bottom). Use the arrow keys to choose, Enter to run, and Escape to close.',
   )
-  alert.mockRestore()
 })
 
 test('ignores Vim motion keys while command mode is open', () => {
@@ -431,7 +359,11 @@ test('restores the disabled preference and leaves every Vim motion untouched', (
   const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
   render(<App />)
 
-  expect(screen.getByText('Vim scroll keys: Off')).toBeVisible()
+  expect(screen.getByRole('button', { name: 'Editor keys: off' })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  )
+  expect(screen.getByText('-- READING --')).toBeVisible()
 
   expect(fireEvent.keyDown(window, { key: 'j' })).toBe(true)
   expect(fireEvent.keyDown(window, { key: 'k' })).toBe(true)
@@ -466,7 +398,10 @@ test('toggles Vim shortcuts from the command palette and persists each update', 
   const scrollBy = vi.spyOn(window, 'scrollBy').mockImplementation(() => undefined)
   render(<App />)
 
-  expect(screen.getByText('Vim scroll keys: On')).toHaveAttribute('aria-live', 'polite')
+  expect(screen.getByRole('button', { name: 'Editor keys: on' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
   fireEvent.keyDown(window, { key: ':' })
   let input = screen.getByRole('combobox', { name: 'Find a command' })
   fireEvent.change(input, { target: { value: 'disable vim' } })
@@ -474,7 +409,7 @@ test('toggles Vim shortcuts from the command palette and persists each update', 
   fireEvent.keyDown(input, { key: 'Enter' })
 
   expect(storage.getItem(vimShortcutsStorageKey)).toBe('false')
-  expect(screen.getByText('Vim scroll keys: Off')).toBeVisible()
+  expect(screen.getByRole('button', { name: 'Editor keys: off' })).toBeVisible()
   expect(fireEvent.keyDown(window, { key: 'd', ctrlKey: true })).toBe(true)
   expect(scrollBy).not.toHaveBeenCalled()
 
@@ -485,7 +420,7 @@ test('toggles Vim shortcuts from the command palette and persists each update', 
   fireEvent.keyDown(input, { key: 'Enter' })
 
   expect(storage.getItem(vimShortcutsStorageKey)).toBe('true')
-  expect(screen.getByText('Vim scroll keys: On')).toBeVisible()
+  expect(screen.getByRole('button', { name: 'Editor keys: on' })).toBeVisible()
   expect(fireEvent.keyDown(window, { key: 'j' })).toBe(false)
   expect(scrollBy).toHaveBeenCalledWith({ behavior: 'smooth', top: 72 })
 })

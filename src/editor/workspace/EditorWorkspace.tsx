@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import type { BufferId, BufferRegistry } from '../buffers/types'
+import { getDocumentHeadingId } from '../document/documentIds'
 import { EditorStatus } from './EditorStatus'
 import { EditorTopBar } from './EditorTopBar'
 import { Explorer } from './Explorer'
@@ -41,7 +42,7 @@ export function EditorWorkspace({
 
   return (
     <div className="editor-workspace">
-      <a className="editor-skip-link" href="#active-buffer">
+      <a className="editor-skip-link" href={`#${getDocumentHeadingId(activeBuffer.id)}`}>
         Skip to content
       </a>
       <EditorTopBar

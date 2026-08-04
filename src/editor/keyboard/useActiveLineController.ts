@@ -98,6 +98,14 @@ export function useActiveLineController({
   const resetForBuffer = useCallback(() => setActiveIndex(0), [setActiveIndex])
 
   useEffect(() => {
+    setCursor((currentCursor) =>
+      currentCursor.bufferId === bufferId
+        ? currentCursor
+        : { bufferId, index: 0 },
+    )
+  }, [bufferId])
+
+  useEffect(() => {
     if (!activeLineId) return
 
     getRegisteredRow(activeLineId)?.scrollIntoView?.({

@@ -130,6 +130,24 @@ test('resets to the first line on buffer changes and when explicitly requested',
   expect(result.current.activeIndex).toBe(0)
 })
 
+test('does not restore a stale line after visiting another buffer without moving', () => {
+  const firstLines = createLines(4)
+  const nextLines = createLines(2)
+  registerRows(firstLines)
+  const { result, rerender } = renderHook(
+    ({ bufferId, lines }: { bufferId: BufferId; lines: DocumentLine[] }) =>
+      useActiveLineController({ bufferId, lines }),
+    { initialProps: { bufferId: 'readme', lines: firstLines } },
+  )
+
+  act(() => result.current.setActiveIndex(3))
+  rerender({ bufferId: 'experience', lines: nextLines })
+  expect(result.current.activeIndex).toBe(0)
+
+  rerender({ bufferId: 'readme', lines: firstLines })
+  expect(result.current.activeIndex).toBe(0)
+})
+
 test('aligns only the active registered row with smooth nearest scrolling', () => {
   const lines = createLines(3)
   const rows = registerRows(lines)

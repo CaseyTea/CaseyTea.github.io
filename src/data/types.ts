@@ -14,6 +14,7 @@ export type Project = {
   id: string
   name: string
   kind: 'professional' | 'side-project'
+  status?: string
   outcome: string
   context: string
   contribution: string

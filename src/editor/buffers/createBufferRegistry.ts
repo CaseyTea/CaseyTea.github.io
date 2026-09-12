@@ -77,7 +77,11 @@ export function createBufferRegistry(data: PortfolioData): BufferRegistry {
       searchText: [data.availability, data.location, ...data.contacts.flatMap(({ label, href }) => [label, href])].join(' '),
     },
   ]
-  const primaryIds = contentBuffers.slice(0, 7).map(({ id }) => id)
+  // Keep established number shortcuts stable as the project collection grows.
+  const primaryIds: BufferId[] = [
+    'readme', 'experience', 'project-username-generator-api',
+    'project-guess-that-ascii-mon', 'project-mockbot', 'about', 'contact',
+  ].filter((id) => contentBuffers.some((buffer) => buffer.id === id)) as BufferId[]
   const buffers: BufferDefinition[] = [
     ...contentBuffers,
     {
@@ -89,9 +93,7 @@ export function createBufferRegistry(data: PortfolioData): BufferRegistry {
       title: 'Help',
       searchText: [
         'Use keys 1 through 7 to open primary buffers.',
-        ...contentBuffers
-          .slice(0, 7)
-          .map((buffer, index) => `${index + 1} ${buffer.filename}`),
+        ...primaryIds.map((id, index) => `${index + 1} ${contentBuffers.find((buffer) => buffer.id === id)!.filename}`),
         'Use tabs to cycle open buffers.',
       ].join(' '),
     },

@@ -16,7 +16,7 @@ import { useBufferSearch } from '../editor/search/useBufferSearch'
 import { EditorWorkspace } from '../editor/workspace/EditorWorkspace'
 
 const registry = createBufferRegistry(portfolioData)
-const firstProjectId = registry.primaryIds.find((id) => id.startsWith('project-')) ?? 'readme'
+const firstProjectId = Array.from(registry.byId.keys()).find((id) => id.startsWith('project-')) ?? 'readme'
 
 const commandBufferIds: Record<string, BufferId> = {
   overview: 'readme',

@@ -128,6 +128,13 @@
   white-space: nowrap;
 }
 
+.editor-recruiter-link {
+  color: var(--editor-moss-soft);
+  font-size: 0.8125rem;
+  padding: 0.5rem 0.25rem;
+  white-space: nowrap;
+}
+
 .editor-resume-link:hover {
   background: var(--editor-rust-strong);
   color: #fff;
@@ -465,6 +472,10 @@
 }
 
 @media (max-width: 35rem) {
+  .editor-top-bar { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+  .editor-identity { min-height: 2.5rem; }
+  .editor-top-bar__actions { grid-column: 1 / -1; justify-content: space-between; min-height: 2.75rem; border-block: 1px solid var(--editor-forest-border); }
+  .editor-tab-strip { grid-column: 1 / -1; grid-row: 3; min-height: 2.5rem; }
   .editor-identity {
     padding-inline: 0.75rem;
   }
@@ -475,9 +486,7 @@
   }
 
   .editor-resume-link {
-    max-width: 4.5rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    margin-left: auto;
   }
 
   .editor-status__position {

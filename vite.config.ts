@@ -3,6 +3,11 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   base: '/',
+  build: {
+    rollupOptions: {
+      input: { editor: 'index.html', recruiters: 'recruiters/index.html' },
+    },
+  },
   plugins: [react()],
   test: {
     environment: 'jsdom',

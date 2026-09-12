@@ -73,7 +73,7 @@ test('opens Experience and Projects from README primary actions', () => {
   fireEvent.click(screen.getByRole('button', { name: 'Browse projects' }))
   expect(screen.getByRole('main')).toHaveAttribute(
     'aria-label',
-    'projects/username-generator-api.md',
+    'projects/myportal.md',
   )
 })
 
@@ -311,7 +311,7 @@ test('provides contact channels, verified location, and no contact form', () => 
   )
   expect(within(contact).getByText(portfolioData.location)).toBeVisible()
   expect(
-    within(contact).getByText(/software teams that care about useful systems/i),
+    within(contact).getByText(/exploring full-stack software engineering roles/i),
   ).toBeVisible()
   expect(contact.querySelector('form')).not.toBeInTheDocument()
 })
@@ -321,7 +321,7 @@ test('renders project evidence and only links available for each selected projec
 
   fireEvent.click(screen.getByRole('button', { name: 'projects/username-generator-api.md' }))
   let project = screen.getByRole('article', { name: 'Username Generator API' })
-  expect(within(project).getByText(/collision-free usernames/i)).toBeVisible()
+  expect(within(project).getByText(/reserve employee usernames and student network IDs/i)).toBeVisible()
   expect(within(project).getByRole('img')).toHaveAttribute(
     'src',
     '/assets/projects/project-usernamegen.png',
@@ -332,7 +332,7 @@ test('renders project evidence and only links available for each selected projec
   project = screen.getByRole('article', { name: 'GuessThatAsciiMon' })
   expect(within(project).getByRole('link', { name: 'View live project' })).toHaveAttribute(
     'href',
-    portfolioData.projects[1].demoUrl,
+    portfolioData.projects.find(({ id }) => id === 'guess-that-ascii-mon')!.demoUrl,
   )
   expect(within(project).queryByRole('link', { name: 'View source' })).not.toBeInTheDocument()
 
@@ -340,7 +340,7 @@ test('renders project evidence and only links available for each selected projec
   project = screen.getByRole('article', { name: 'MockBot' })
   expect(within(project).getByRole('link', { name: 'View source' })).toHaveAttribute(
     'href',
-    portfolioData.projects[2].sourceUrl,
+    portfolioData.projects.find(({ id }) => id === 'mockbot')!.sourceUrl,
   )
   expect(within(project).queryByRole('link', { name: 'View live project' })).not.toBeInTheDocument()
 })
@@ -371,12 +371,12 @@ test('runs destination commands by aligning the hash, current file, and heading 
   fireEvent.change(input, { target: { value: 'projects' } })
   fireEvent.keyDown(input, { key: 'Enter' })
 
-  expect(window.location.hash).toBe('#buffer=username-generator-api.md')
+  expect(window.location.hash).toBe('#buffer=myportal.md')
   expect(screen.getByRole('main')).toHaveAttribute(
     'aria-label',
-    'projects/username-generator-api.md',
+    'projects/myportal.md',
   )
-  expect(screen.getByRole('heading', { name: 'Username Generator API' })).toHaveFocus()
+  expect(screen.getByRole('heading', { name: 'MyPortal: HR & school operations' })).toHaveFocus()
   expect(focus).toHaveBeenCalledWith({ preventScroll: true })
 })
 
@@ -495,8 +495,8 @@ test('invokes the semantic Resume action from the active document line', () => {
 })
 
 test.each([
-  ['projects/guess-that-ascii-mon.md', 'Open live project', portfolioData.projects[1].demoUrl],
-  ['projects/mockbot.md', 'Open project source', portfolioData.projects[2].sourceUrl],
+  ['projects/guess-that-ascii-mon.md', 'Open live project', portfolioData.projects.find(({ id }) => id === 'guess-that-ascii-mon')!.demoUrl],
+  ['projects/mockbot.md', 'Open project source', portfolioData.projects.find(({ id }) => id === 'mockbot')!.sourceUrl],
 ] as const)('invokes the %s external document action from the active line', (path, label, href) => {
   const open = vi.spyOn(window, 'open').mockImplementation(() => null)
   render(<App />)

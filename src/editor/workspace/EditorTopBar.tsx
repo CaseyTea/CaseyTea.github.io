@@ -52,6 +52,7 @@ export function EditorTopBar({
         onCycleBuffer={onCycleBuffer}
       />
       <div className="editor-top-bar__actions">
+        <a className="editor-recruiter-link" href="/recruiters/">Recruiter view</a>
         <a className="editor-resume-link" href={portfolioData.resumeUrl} download>
           Download resume
         </a>

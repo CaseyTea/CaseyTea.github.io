@@ -1,4 +1,5 @@
 import type { PortfolioData, Project } from '../../data/types'
+import { createBufferRegistry } from '../buffers/createBufferRegistry'
 import type { BufferDefinition, BufferId } from '../buffers/types'
 import type { DocumentAction, DocumentActions, DocumentLine } from './types'
 
@@ -131,6 +132,7 @@ function createProjectLines(
         <dt>Type</dt>
         <dd>{project.kind === 'professional' ? 'Professional work' : 'Side project'}</dd>
       </div>
+      {project.status && <div><dt>Status</dt><dd>{project.status}</dd></div>}
       <div>
         <dt>Outcome</dt>
         <dd>{project.outcome}</dd>
@@ -259,7 +261,9 @@ function createHelpLines(data: PortfolioData, actions: DocumentActions): Documen
     { id: 'about', label: 'about.md' },
     { id: 'contact', label: 'contact.md' },
   ]
-  const primaryBuffers = availableBuffers.slice(0, 7)
+  const primaryBuffers = createBufferRegistry(data).primaryIds.map((id) =>
+    availableBuffers.find((buffer) => buffer.id === id)!,
+  )
 
   addLine('Help', <h1>Help</h1>)
   addLine(

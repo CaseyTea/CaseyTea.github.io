@@ -494,6 +494,12 @@
   }
 }
 
+@media (max-width: 22rem) {
+  .editor-top-bar__actions { gap: 0.375rem; padding-inline: 0.5rem; }
+  .editor-recruiter-link { font-size: 0.75rem; }
+  .editor-resume-link { padding-inline: 0.5rem; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .editor-explorer {
     transition: none;

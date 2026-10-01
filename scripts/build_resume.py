@@ -77,7 +77,7 @@ for line in (ROOT / 'content/resume.md').read_text().splitlines():
     elif in_header:
         style = 'headline' if line.startswith('Full-Stack') else 'contact'
         text = line
-    elif previous_job and line in ['Information Services Analyst I: Programmer', 'Quality Engineering Intern, Identity Services']:
+    elif previous_job and line in ['Information Services Analyst I: Programmer (Full-time)', 'Technical Specialist III', 'Quality Engineering Intern, Identity Services']:
         style, text = 'role', line
     else:
         style, text = 'body', line

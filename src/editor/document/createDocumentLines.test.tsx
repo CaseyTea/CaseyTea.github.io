@@ -102,7 +102,9 @@ test.each(portfolioData.projects)(
 test('About, Contact, and Help use real data, semantic links, and documented shortcuts', () => {
   const aboutLines = createDocumentLines(registry.byId.get('about')!, portfolioData, actions)
   const about = renderLineContent(<>{aboutLines.map(({ content, id }) => <div key={id}>{content}</div>)}</>)
-  expect(within(about).getByText(portfolioData.introduction)).toBeVisible()
+  portfolioData.about.forEach((paragraph) =>
+    expect(within(about).getByText(paragraph)).toBeVisible(),
+  )
   portfolioData.skillGroups.forEach(({ title }) =>
     expect(within(about).getByRole('heading', { name: title })).toBeVisible(),
   )

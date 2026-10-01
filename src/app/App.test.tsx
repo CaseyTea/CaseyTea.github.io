@@ -60,7 +60,7 @@ test('opens a selected portfolio document from the explorer', () => {
   expect(window.location.hash).toBe('#buffer=experience.log')
   expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'experience.log')
   expect(screen.getByRole('heading', { level: 1, name: 'Experience' })).toHaveFocus()
-  expect(screen.getByRole('heading', { name: 'Quality Engineer (Intern)' })).toBeVisible()
+  expect(screen.getByRole('heading', { name: 'Quality Engineering Intern, Identity Services' })).toBeVisible()
 })
 
 test('opens Experience and Projects from README primary actions', () => {
@@ -75,6 +75,23 @@ test('opens Experience and Projects from README primary actions', () => {
     'aria-label',
     'projects/myportal.md',
   )
+})
+
+test.each([
+  ['twitch', 'twitch-chat-overlay', 'Twitch chat overlay'],
+  ['pollyfwog', 'pollyfwog', 'PollyFwog'],
+  ['keebjournal', 'keebjournal', 'KeebJournal'],
+])('opens the %s project from command search with its heading focused', (query, id, name) => {
+  render(<App />)
+  fireEvent.keyDown(window, { key: 'k', metaKey: true })
+  const input = screen.getByRole('combobox', { name: 'Find a command' })
+  fireEvent.change(input, { target: { value: query } })
+  expect(screen.getByRole('option', { name: `Open project: ${name}` })).toBeVisible()
+  fireEvent.keyDown(input, { key: 'Enter' })
+  expect(screen.queryByRole('dialog', { name: 'Portfolio commands' })).not.toBeInTheDocument()
+  expect(screen.getByRole('main')).toHaveAttribute('aria-label', `projects/${id}.md`)
+  expect(screen.getByRole('heading', { level: 1, name })).toHaveFocus()
+  expect(window.location.hash).toBe(`#buffer=${id}.md`)
 })
 
 test('uses plain Resume terminology in visitor-facing app copy and metadata', () => {
@@ -322,10 +339,7 @@ test('renders project evidence and only links available for each selected projec
   fireEvent.click(screen.getByRole('button', { name: 'projects/username-generator-api.md' }))
   let project = screen.getByRole('article', { name: 'Username Generator API' })
   expect(within(project).getByText(/reserve employee usernames and student network IDs/i)).toBeVisible()
-  expect(within(project).getByRole('img')).toHaveAttribute(
-    'src',
-    '/assets/projects/project-usernamegen.png',
-  )
+  expect(within(project).queryByRole('img')).not.toBeInTheDocument()
   expect(within(project).queryByRole('link')).not.toBeInTheDocument()
 
   fireEvent.click(screen.getByRole('button', { name: 'projects/guess-that-ascii-mon.md' }))

@@ -103,6 +103,13 @@ export function App() {
       run: () => navigation.openBuffer(commandBufferIds[id] ?? registry.defaultId),
       restoreInvokingFocus: false,
     })),
+    ...portfolioData.projects.map(({ id, name, technologies }) => ({
+      id: `open-project-${id}`,
+      label: `Open project: ${name}`,
+      keywords: ['project', id, name, ...technologies],
+      run: () => navigation.openBuffer(`project-${id}` as BufferId),
+      restoreInvokingFocus: false,
+    })),
     {
       id: 'resume',
       label: 'Download resume',

@@ -130,19 +130,19 @@ function createProjectLines(
     <dl className="document-metadata">
       <div>
         <dt>Type</dt>
-        <dd>{project.kind === 'professional' ? 'Professional work' : 'Side project'}</dd>
+        <dd>{project.kind === 'professional' ? 'Professional work' : 'Independent project'}</dd>
       </div>
       {project.status && <div><dt>Status</dt><dd>{project.status}</dd></div>}
       <div>
-        <dt>Outcome</dt>
+        <dt>What it does</dt>
         <dd>{project.outcome}</dd>
       </div>
       <div>
-        <dt>Context</dt>
+        <dt>The problem</dt>
         <dd>{project.context}</dd>
       </div>
       <div>
-        <dt>Contribution</dt>
+        <dt>My work</dt>
         <dd>{project.contribution}</dd>
       </div>
     </dl>,
@@ -199,7 +199,6 @@ function createAboutLines(data: PortfolioData, actions: DocumentActions): Docume
   const { addLine, lines } = createLineBuilder('about')
 
   addLine(`About ${data.name}`, <h1>About {data.name}</h1>)
-  addLine(data.introduction, <p>{data.introduction}</p>)
   data.about.forEach((paragraph) => addLine(paragraph, <p>{paragraph}</p>))
   addLine('Skills and tools', <h2>Skills and tools</h2>)
   data.skillGroups.forEach((group) => {
